@@ -20,9 +20,9 @@ def create_tables(cursor):
     create_ingre = """CREATE TABLE ingredient(
         iid INT PRIMARY KEY AUTO_INCREMENT,
         iname VARCHAR(30) NOT NULL UNIQUE,
-        category VARCHAR(10),
+        category INT,
         price FLOAT NOT NULL);"""
-    cursor.execute(create_ingre)
+    cursor.execute(create_ingre) # Category: 0 - veg, 1 -meat, 2 - seafood. In the future we only need to sum up to check if a pizza is vegan.
 
     create_p2i = """CREATE TABLE makepizza(
         pid INT,
@@ -87,14 +87,17 @@ def insert_samples(cursor):
     cursor.execute("INSERT INTO pizza(pname) values ('Funghi');")
     cursor.execute("INSERT INTO pizza(pname) values ('Ham');")
     cursor.execute("INSERT INTO pizza(pname) values ('Salami');")
+    cursor.execute("INSERT INTO pizza(pname) values ('Vegan Funghi');")
 
     # Insert some ingredients
-    cursor.execute("INSERT INTO ingredient(iname, category,price) values ('Mozzarella','MEAT',1.25);")
-    cursor.execute("INSERT INTO ingredient(iname, category,price) values ('Pepperoni','MEAT',1.25);")
-    cursor.execute("INSERT INTO ingredient(iname, category,price) values ('pizza seasoning','Veg',0);")
-    cursor.execute("INSERT INTO ingredient(iname, category,price) values ('Mushroom','Veg',1.25);")
-    cursor.execute("INSERT INTO ingredient(iname, category,price) values ('Ham','MEAT',1.25);")
-    cursor.execute("INSERT INTO ingredient(iname, category,price) values ('Salami','MEAT',1.25);")
+    cursor.execute("INSERT INTO ingredient(iname, category,price) values ('Mozzarella',1,1.25);")
+    cursor.execute("INSERT INTO ingredient(iname, category,price) values ('Pepperoni',1,1.25);")
+    cursor.execute("INSERT INTO ingredient(iname, category,price) values ('Pizza Seasoning',0,0);")
+    cursor.execute("INSERT INTO ingredient(iname, category,price) values ('Mushroom',0,1.25);")
+    cursor.execute("INSERT INTO ingredient(iname, category,price) values ('Ham',0,1.25);")
+    cursor.execute("INSERT INTO ingredient(iname, category,price) values ('Salami',0,1.25);")
+    cursor.execute("INSERT INTO ingredient(iname, category,price) values ('Vegan Cheese',0,2);")
+
 
     # Insert some makepizzas
     cursor.execute("INSERT INTO makepizza(pid, iid) values(1,1)")
@@ -107,8 +110,11 @@ def insert_samples(cursor):
     cursor.execute("INSERT INTO makepizza(pid, iid) values(4,5)")
     cursor.execute("INSERT INTO makepizza(pid, iid) values(5,1)")
     cursor.execute("INSERT INTO makepizza(pid, iid) values(5,6)")
-    # Execute this in mysql to see this graph with names:
-    # SELECT p.pid, p.pname, i.iid, i.iname from pizza p join makepizza m on p.pid = m.pid join ingredient i on i.iid = m.iid;
+    cursor.execute("INSERT INTO makepizza(pid, iid) values(6,4)")
+    cursor.execute("INSERT INTO makepizza(pid, iid) values(6,3)")
+    cursor.execute("INSERT INTO makepizza(pid, iid) values(6,7)")
+    # Execute this in mysql to see the complete price chart with names:
+    # SELECT p.pid, p.pname, i.iid, i.iname, i.price FROM pizza p JOIN makepizza m ON p.pid = m.pid JOIN ingredient i ON i.iid = m.iid ORDER BY pid;
 
     # Insert some other foods
     cursor.execute("INSERT INTO otherfood(fname, price) values ('Thick Shake Cherry',4.75);")
