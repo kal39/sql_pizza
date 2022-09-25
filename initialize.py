@@ -109,22 +109,22 @@ def insert_samples(cursor):
     cursor.execute("INSERT INTO ingredient(name, category, price) values ('Vegan Cheese',    'VEGETARIAN', 2);")
 
     # Insert some makepizzas
-    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(1, 1)")
-    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(1, 2)")
-    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(2, 1)")
-    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(2, 3)")
-    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(3, 1)")
-    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(3, 4)")
-    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(4, 1)")
-    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(4, 5)")
-    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(5, 1)")
-    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(5, 6)")
-    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(6, 4)")
-    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(6, 3)")
-    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(6, 7)")
+    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(1, 1);")
+    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(1, 2);")
+    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(2, 1);")
+    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(2, 3);")
+    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(3, 1);")
+    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(3, 4);")
+    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(4, 1);")
+    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(4, 5);")
+    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(5, 1);")
+    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(5, 6);")
+    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(6, 4);")
+    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(6, 3);")
+    cursor.execute("INSERT INTO pizza_to_ingredient(pizza, ingredient) values(6, 7);")
    
     # Execute this in mysql to see the complete price chart with names:
-    # SELECT pizza.id, pizza.name, ingredient.id, ingredient.name, ingredient.category, ingredient.price FROM pizza JOIN pizza_to_ingredient ON pizza.id = pizza_to_ingredient.pizza JOIN ingredient ON ingredient.id = pizza_to_ingredient.ingredient ORDER BY pizza;
+    # SELECT pizza.id, pizza.name, ingredient.id, ingredient.name, ingredient.category, ingredient.price, ingredient.price*1.4 as 'sell_price' FROM pizza JOIN pizza_to_ingredient ON pizza.id = pizza_to_ingredient.pizza JOIN ingredient ON ingredient.id = pizza_to_ingredient.ingredient ORDER BY pizza;
 
     # Insert some other foods
     cursor.execute("INSERT INTO side_dish(name, price) values ('Thick Shake Cherry', 4.75);")
