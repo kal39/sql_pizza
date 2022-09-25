@@ -5,9 +5,9 @@ CREATE USER tom IDENTIFIED BY '1243';
 GRANT ALL PRIVILEGES ON pizza.* to 'tom'@'%';
 FLUSH PRIVILEGES;
 
-You can check the structure of any tables by using in mysql:
+You can check the structure of any tables by using this in mysql:
 DESC table_name;
-Because I don't know why it cannot be shown in termina :X
+Because I don't know why it cannot be shown in terminal if add this line in here :X
 '''
 import pymysql as sql
 
@@ -25,7 +25,7 @@ def create_tables(cursor):
 			category ENUM('VEGETARIAN', 'MEAT', 'FISH'),
 			price FLOAT NOT NULL
 		);
-	""") # Category: 0 - veg, 1 -meat, 2 - seafood. In the future we only need to sum up to check if a pizza is vegan.
+	""")
     cursor.execute("""
 		CREATE TABLE pizza_to_ingredient(
 			pizza INT,
@@ -70,16 +70,16 @@ def create_tables(cursor):
 		CREATE TABLE order_to_pizza(
 			order_info INT NOT NULL,
 			pizza INT NOT NULL,
-			FOREIGN KEY(order_info) REFERENCES pizza(id),
-			FOREIGN KEY(pizza) REFERENCES order_info(id)
+			FOREIGN KEY(order_info) REFERENCES order_info(id),
+			FOREIGN KEY(pizza) REFERENCES pizza(id)
 		);
 	""")
     cursor.execute("""
 		CREATE TABLE order_to_side_dish(
 			order_info INT NOT NULL,
 			side_dish INT NOT NULL,
-			FOREIGN KEY(order_info) REFERENCES side_dish(id),
-			FOREIGN KEY(side_dish) REFERENCES order_info(id)
+			FOREIGN KEY(order_info) REFERENCES order_info(id),
+			FOREIGN KEY(side_dish) REFERENCES side_dish(id)
 		);
 	""")
     cursor.execute("""
@@ -87,7 +87,7 @@ def create_tables(cursor):
 			id INT PRIMARY KEY AUTO_INCREMENT,
 			status INT DEFAULT 0
 		);
-	""")
+	""") # status: 0 - not given, 1 - is given, delete after using it 
 
 def insert_samples(cursor):
     # These samples are copied from Domino
