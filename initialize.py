@@ -138,7 +138,7 @@ def insert_samples(cursor):
     #Insert a deliveryman
     cursor.execute("INSERT INTO deliveryman(name, postcode) values ('Tom', '6229EN');")
 
-if __name__ == "__main__":
+def init():
 	db = sql.connect(host="localhost", user="tom", password="1243")
 	cursor = db.cursor()
 	
@@ -155,3 +155,5 @@ if __name__ == "__main__":
 		db.rollback()
 	
 	db.close()
+
+if __name__ == "__main__": init() # run the init() function if this file is run directly
