@@ -2,7 +2,7 @@ from email.policy import default
 from threading import Thread
 from time import sleep
 
-import initialize
+import database
 
 doc = """
 available commands: available, order, reset, help, quit
@@ -21,11 +21,12 @@ available commands: available, order, reset, help, quit
   Quite the app.
 """
 
+db = database.PizzaDatabase()
 running = False # the input and system threads will stop whenever this is set to false
 
 # This thread will get orders from the terminal
 def input_thread_fn():
-	global running
+	global db, running # this is a threaded function, so this is needed, idk why
 
 	while running:
 		input_str = input("Enter command (\"help\" for available commands)\n > ").strip()
@@ -33,14 +34,16 @@ def input_thread_fn():
 		command = input_str.split(" ", 1)[0]
 		args =  input_str.split(" ")[1:] if len(input_str.split(" ", 1)) > 1 else []
 
-		print("command: " + command + ", args: " + str(args))
-
 		match command:
-			case "pass": pass # TODO: implement
+			case "available":
+				for pizza in db.get_pizzas():
+					print("- " + pizza)
+					for ingredient in db.get_ingredients_for(pizza):
+						print("  - " + ingredient)
 			case "order": pass # TODO: implement
 			case "reset":
 				print("Resting database... ", end="")
-				initialize.init()
+				db.reset()
 				print("done")
 			case "help": print(doc)
 			case "quit": running = False
@@ -48,8 +51,8 @@ def input_thread_fn():
 
 # This thread will take care of sending out the deliverymen and other non-input stuff
 def system_thread_fn():
-	global running
-	
+	global db, running # this is a threaded function, so this is needed, idk why
+
 	while running:
 		sleep(1) # only check for updates every second
 
