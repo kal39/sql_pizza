@@ -1,4 +1,3 @@
-from email.policy import default
 from threading import Thread
 from time import sleep
 import readline # importing this lets you use arrow keys and other stuff in input() 
@@ -36,11 +35,10 @@ def input_thread_fn():
 		args =  input_str.split(" ")[1:] if len(input_str.split(" ", 1)) > 1 else []
 
 		match command:
-			case "available":
+			case "available": # TODO: show price etc
 				for pizza in db.get_pizzas():
 					print("- " + pizza)
-					for ingredient in db.get_ingredients_for(pizza):
-						print("  - " + ingredient)
+					for ingredient in db.get_ingredients_for(pizza): print("  - " + ingredient)
 			case "order": pass # TODO: implement
 			case "reset":
 				print("Resting database... ", end="")
@@ -56,6 +54,7 @@ def system_thread_fn():
 
 	while running:
 		sleep(1) # only check for updates every second
+		# TODO: implement
 
 if __name__ == "__main__":
 	print("Starting app")

@@ -27,10 +27,10 @@ class PizzaDatabase:
 		self.execute("USE pizza;")
 	
 	# deconstructor, probably unnecessary, but who knows, might be good to have
-	def __del__(self):
-		self.db.close()
+	def __del__(self): self.db.close()
 	
-	# executes sql command; replaces newlines and tabs with spaces;
+	# executes sql command
+	# replaces newlines and tabs with spaces
 	# can run many commands at once, if they are separated with a ";"
 	# if "verbose" is set to true it will print the command before running it, pretty useful for debugging
 	def execute(self, command):
@@ -71,12 +71,10 @@ class PizzaDatabase:
 		self.execute(open("database_creation_command.sql", "r").read())
 	
 	# "private" function, destroys the "pizza" database
-	def __destroy_sql_database(self):
-		self.execute("DROP DATABASE pizza;")
+	def __destroy_sql_database(self): self.execute("DROP DATABASE pizza;")
 
 	# "private" function, inserts all the samples from "database_population_command.sql"
-	def __populate_sql_database(self):
-		self.execute(open("database_population_command.sql", "r").read())
+	def __populate_sql_database(self): self.execute(open("database_population_command.sql", "r").read())
 
 # for testing purposes (this will reset the database to the initial state)
 if __name__ == "__main__":

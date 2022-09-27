@@ -9,7 +9,6 @@ INSERT INTO pizza(name) values ('Hawaii');
 INSERT INTO pizza(name) values ('Vegan Fungi');
 INSERT INTO pizza(name) values ('Vegan Margaritha');
 
-
 INSERT INTO ingredient(name, category, price) values ('Mozzarella',      'MEAT',       1.25);
 INSERT INTO ingredient(name, category, price) values ('Pepperoni',       'MEAT',       1.25);
 INSERT INTO ingredient(name, category, price) values ('Minced Beef',     'MEAT',       1.5);
