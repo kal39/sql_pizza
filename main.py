@@ -1,6 +1,7 @@
 from email.policy import default
 from threading import Thread
 from time import sleep
+import readline # importing this lets you use arrow keys and other stuff in input() 
 
 import database
 
