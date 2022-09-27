@@ -49,16 +49,20 @@ class PizzaDatabase:
 		self.__create_sql_database()
 		self.__populate_sql_database()
 	
-	# returns a list of all pizzas
-	def get_pizzas(self):
+	def get_pizza(self, pizza_name):
+		self.execute("SELECT ingredient.name FROM ingredient INNER JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient INNER JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.name = '" + pizza_name + "';")
+		return {"name": pizza_name, "ingredients": list(map(lambda item: item[0], self.cursor.fetchall()))}
+
+	def get_ingredient(self, ingredient_name):
+		self.execute("SELECT category, price FROM ingredient WHERE name = '" + ingredient_name + "';")
+		ingredient = self.cursor.fetchall()
+		return {"name": ingredient_name, "category": ingredient[0][0], "price": ingredient[0][1]} if len(ingredient) == 1 else None 
+
+	# returns a list of all pizza names
+	def get_all_pizza_names(self):
 		self.execute("SELECT name FROM pizza")
 		return list(map(lambda item: item[0], self.cursor.fetchall()))
-	
-	# returns a list of ingredients for 
-	def get_ingredients_for(self, pizza_name):
-		self.execute("SELECT ingredient.name FROM ingredient INNER JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient INNER JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.name = '" + pizza_name + "';")
-		return list(map(lambda item: item[0], self.cursor.fetchall()))
-	
+
 	# "private" function, check if the "pizza" database exists
 	def __sql_database_exists(self):
 		self.execute("SHOW DATABASES LIKE 'pizza';")

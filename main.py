@@ -36,12 +36,18 @@ def input_thread_fn():
 
 		match command:
 			case "available": # TODO: show price etc
-				for pizza in db.get_pizzas():
-					print("- " + pizza)
-					for ingredient in db.get_ingredients_for(pizza): print("  - " + ingredient)
+				for pizza_name in db.get_all_pizza_names():
+					pizza = db.get_pizza(pizza_name)
+					print("- " + pizza["name"])
+					price = 0
+					for ingredient_name in pizza["ingredients"]:
+						ingredient = db.get_ingredient(ingredient_name)
+						price += ingredient["price"]
+						print("  - " + ingredient["name"] + " (" + ingredient["category"] + "): €" + str(ingredient["price"]))
+					print("  Price: €" + str(price) + "\n")
 			case "order": pass # TODO: implement
 			case "reset":
-				print("Resting database... ", end="")
+				print("Resting database...")
 				db.reset()
 				print("done")
 			case "help": print(doc)
