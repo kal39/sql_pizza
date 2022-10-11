@@ -49,7 +49,8 @@ def input_thread_fn():
 				cus_ID = set_cus_info(db)
 				order_id = place_order(db, items, cus_ID) # commit in database, set time 
 				print("Your order id is:", order_id)
-				show_order(db,items,1) # TODO: coupon
+				coupon(db,items)
+				show_order(db,items,check_coupon(db)) 
 				arrive_time = (db.get_order_time(order_id) +datetime.timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M")
 				print("Your order is expected to arrive around", arrive_time)# 10 mins making, 20 mins delivering
 			case "cancel":
@@ -130,7 +131,7 @@ def place_order(db, orders, cus_id):
 			return order_id
 
 def cancel_order(db):
-	order_id = input("Enter your order ID > ")
+	order_id = input("Enter your order ID > ").strip().lower()
 	if db.is_exist(table = 'order_info',col = 'id', str =order_id):
 		if((datetime.datetime.now() + datetime.timedelta(minutes=-5)) > db.get_order_time(order_id)):
 			print("You CANNOT cancel because your order is placed for more than 5 minuts.")
@@ -139,6 +140,13 @@ def cancel_order(db):
 			print("Your order is canceled!")
 	else:
 		print("Order doesn't exist. Please try again.")
+
+def coupon(db, items):
+	if len(items[0]) >= 10:
+		coupon_id = db.get_coupon()
+		print("You've ordered over 10 pizzas. Here's a coupon id:",coupon_id)
+		print("You can use it for 10% \discount next time.")
+		db.send_coupon(coupon_id)
 
 def show_pizza(db, pizza_id):
 	pizza = db.get_pizza_info(pizza_id)
@@ -154,6 +162,17 @@ def show_sidedish(info):
 	print("  - D"+ str(info[0]) + ": "+ info[1].title())
 	print("    Price: €" + str("%.2f" % info[2]) + " (incl. 9% VAT)\n")
 
+def check_coupon(db):
+	while(True):
+		coupon = input("Enter your coupon. If no enter 'n' > ").strip().lower()
+		if(coupon[0] == 'n'):
+			return 1
+		elif(db.check_coupon(coupon)):
+			db.delete_coupon(coupon)
+			return 0.9
+		else:
+			print("Invalid coupon. Please try again.")
+
 def show_order(db, items, discount):
 	print("Your order detail: ")
 	print("- Pizza:")
@@ -162,7 +181,8 @@ def show_order(db, items, discount):
 	print("- Desert & Drink:")
 	for did in items[1]:
 		show_sidedish(db.get_sidedish(did))
-	print("Total price: €", db.get_total_price(items,discount))
+	original = db.get_total_price(items)
+	print(f'Total price: € {("%.2f" % (original * discount))} (original price: € {("%.2f" % original)})')
 	
 if __name__ == "__main__":
 	print("Starting app")
