@@ -10,6 +10,9 @@ DESC table_name;
 Because I don't know why it cannot be shown in terminal if add this line in here :X
 '''
 
+from multiprocessing.util import is_exiting
+import re
+from tkinter.tix import Select
 import pymysql as sql
 
 verbose = False # if this is true PizzaDatabase will print out every sql command before executing it, useful for debugging
@@ -63,6 +66,54 @@ class PizzaDatabase:
 		self.execute("SELECT name FROM pizza")
 		return list(map(lambda item: item[0], self.cursor.fetchall()))
 
+	def get_all_sidedishes(self):
+		self.execute("SELECT name, price from side_dish;")
+		return {s[0]:s[1] for s in self.cursor.fetchall()}
+
+	def is_vegan(self,pizza_name):
+		self.execute("SELECT ingredient.category FROM ingredient INNER JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient INNER JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.name = '" + pizza_name + "';")
+		category = [c[0] for c in self.cursor.fetchall()]
+		for each in category:
+			if each != 'VEGETARIAN': return ""
+		return '(VEGETARIAN)'
+
+	def add_order(self, customer_id):
+		if(not self.is_exist(table = 'customer',col = 'id', str = customer_id)):
+			print('Customer does not exist.')
+			return False
+		try:
+			self.execute(f"INSERT INTO order_info(customer) values ('{customer_id}');")
+			self.db.commit()
+			self.execute("SELECT last_insert_id();")
+			return self.cursor.fetchone()
+		except sql.Error as error:
+			print("ERROR: " + str(error))
+			return False
+
+	def add_customer(self, customer_name, address, postcode, phoneNo):
+		try:
+			self.execute(f"INSERT INTO customer(name, address, postcode, phone_number) values ('{customer_name}', '{address}', '{postcode}', '{phoneNo}');")
+			self.db.commit()
+			self.execute("SELECT last_insert_id();")
+			return self.cursor.fetchone()
+		except sql.Error as error:
+			print("ERROR: " + str(error))
+			return False
+
+	def is_exist(self, table, col, str):
+		self.execute(f"SELECT {col} FROM {table} WHERE {col} = '{str}' LIMIT 1;")
+		return self.cursor.fetchone() != None
+	
+	def order_pizzas(self,pizza_names):
+		pass
+
+	def get_cus_info(self, cus_id):
+		if(not self.is_exist(table = 'customer',col = 'id', str = cus_id)):
+			return None
+		else:
+			self.execute(f"SELECT * from customer where id = '{cus_id}';")
+			return self.cursor.fetchone()
+
 	# "private" function, check if the "pizza" database exists
 	def __sql_database_exists(self):
 		self.execute("SHOW DATABASES LIKE 'pizza';")
@@ -84,5 +135,11 @@ class PizzaDatabase:
 if __name__ == "__main__":
 	db = PizzaDatabase()
 	db.reset()
+
+	#print(db.is_exist('pizza','id','1'))
+	#print(db.is_exist('pizza','id','11'))
+	#print(db.is_exist(table = 'pizza',col='name',str = 'ham'))
+
+	print(db.get_cus_info(1))
 	# print(db.get_pizzas())
 	# print(db.get_ingredients_for("Vegan Fungi"))

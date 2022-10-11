@@ -1,13 +1,13 @@
-INSERT INTO pizza(name) values ('Perfect Pepperoni');
-INSERT INTO pizza(name) values ('Margaritha');
-INSERT INTO pizza(name) values ('Fungi');
-INSERT INTO pizza(name) values ('Ham');
-INSERT INTO pizza(name) values ('Salami');
-INSERT INTO pizza(name) values ('Tonno');
-INSERT INTO pizza(name) values ('Americana');
-INSERT INTO pizza(name) values ('Hawaii');
-INSERT INTO pizza(name) values ('Vegan Fungi');
-INSERT INTO pizza(name) values ('Vegan Margaritha');
+INSERT INTO pizza(name) values ('perfect pepperoni');
+INSERT INTO pizza(name) values ('margaritha');
+INSERT INTO pizza(name) values ('fungi');
+INSERT INTO pizza(name) values ('ham');
+INSERT INTO pizza(name) values ('salami');
+INSERT INTO pizza(name) values ('tonno');
+INSERT INTO pizza(name) values ('americana');
+INSERT INTO pizza(name) values ('hawaii');
+INSERT INTO pizza(name) values ('vegan fungi');
+INSERT INTO pizza(name) values ('vegan margaritha');
 
 INSERT INTO ingredient(name, category, price) values ('Mozzarella',      'MEAT',       1.25);
 INSERT INTO ingredient(name, category, price) values ('Pepperoni',       'MEAT',       1.25);
@@ -48,12 +48,12 @@ INSERT INTO pizza_to_ingredient(pizza, ingredient) values(9, 11);
 INSERT INTO pizza_to_ingredient(pizza, ingredient) values(10, 7);
 INSERT INTO pizza_to_ingredient(pizza, ingredient) values(10, 11);
 
-INSERT INTO side_dish(name, price) values ('Thick Shake Cherry', 4.75);
-INSERT INTO side_dish(name, price) values ('Thick Shake Banana', 4.75);
-INSERT INTO side_dish(name, price) values ('Thick Shake Iced Coffee', 4.75);
+INSERT INTO side_dish(name, price) values ('thick shake cherry', 4.75);
+INSERT INTO side_dish(name, price) values ('thick shake banana', 4.75);
+INSERT INTO side_dish(name, price) values ('thick shake iced coffee', 4.75);
 
-INSERT INTO side_dish(name, price) values ('Chocolate Lavacake',       3.95);
-INSERT INTO side_dish(name, price) values ('Dutch Pancake',      2.99);
+INSERT INTO side_dish(name, price) values ('chocolate lavacake',       3.95);
+INSERT INTO side_dish(name, price) values ('dutch pancake',      2.99);
 
 INSERT INTO customer(name, address, postcode, phone_number) values ('Jerry', 'PHS1', '6229EN', '123456789');
 
