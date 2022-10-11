@@ -10,6 +10,7 @@ DESC table_name;
 Because I don't know why it cannot be shown in terminal if add this line in here :X
 '''
 
+from os import stat
 import pymysql as sql
 
 verbose = False # if this is true PizzaDatabase will print out every sql command before executing it, useful for debugging
@@ -83,25 +84,29 @@ class PizzaDatabase:
 			self.execute(f"SELECT * FROM customer WHERE id = '{cus_id}';")
 			return self.cursor.fetchone()
 
-	def get_total_price(self, items, discount):
+	def get_total_price(self, items):
 		price = 0
 		for pizza_id in items[0]:
 			pizza = self.get_pizza_info(pizza_id)
 			for ingredient_name in pizza["ingredients"]:
 				ingredient = self.get_ingredient(ingredient_name)
-				price += ingredient["price"]*1.4
+				price += ingredient["price"]*1.4*1.09
 		for did in items[1]:
 			price += self.get_sidedish(did)[2]
-		price *= discount * 1.09
-		return ("%.2f" % price)
+		return price
 
 	def get_order_time(self,order_id):
 		if(not self.is_exist('order_info','id',order_id)):
 			print("Order does not exist.")
 			return 
-		self.execute(f"SELECT time FROM order_info WHERE id = {order_id}")
+		self.execute(f"SELECT time FROM order_info WHERE id = {order_id};")
 		return self.cursor.fetchone()[0]
-	
+
+	def get_coupon(self):
+		self.execute("INSERT INTO coupon() VALUES();") 
+		self.execute("SELECT id FROM coupon WHERE status = 0 LIMIT 1;")
+		return self.cursor.fetchone()[0]
+
 	def is_vegan(self,pizza_name):
 		self.execute(f"SELECT ingredient.category FROM ingredient JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.name = '" + pizza_name + "';")
 		category = [c[0] for c in self.cursor.fetchall()]
@@ -116,7 +121,6 @@ class PizzaDatabase:
 	def create_customer(self, customer_name, address, postcode, phoneNo):
 		try:
 			self.execute(f"INSERT INTO customer(name, address, postcode, phone_number) values ('{customer_name}', '{address}', '{postcode}', '{phoneNo}');")
-			self.db.commit()
 			self.execute("SELECT last_insert_id();")
 			return self.cursor.fetchone()[0]
 		except sql.Error as error:
@@ -126,21 +130,37 @@ class PizzaDatabase:
 	def create_order(self, cus_id):
 		try:
 			self.execute(f"INSERT INTO order_info(customer) VALUES ({cus_id});")
-			self.db.commit()
 			self.execute("SELECT last_insert_id();")
 			return self.cursor.fetchone()[0]
 		except sql.Error as error:
 			print("ERROR: " + str(error))
-		
+	
+	def check_coupon(self, coupon_id):
+		if(not self.is_exist('coupon','id',coupon_id)):
+			return False
+		else:
+			self.execute(f"SELECT status FROM coupon WHERE id = {coupon_id}")
+			status = self.cursor.fetchone()[0]
+			if(status == 1):
+				return True
+			else:
+				return False
+
+	def send_coupon(self, coupon_id):
+		self.execute(f"UPDATE coupon SET status = 1 WHERE id = {coupon_id};")
+
+	def delete_coupon(self, coupon_id):
+		self.cursor.execute(f"DELETE FROM coupon WHERE id = {coupon_id};")
+
 	def set_order(self, items, order_ID):
 		try:
 			for pizza_id in items[0]:
-				self.execute(f"INSERT INTO order_to_pizza(order_info, pizza) VALUES ({order_ID}, {pizza_id})")
+				self.cursor.execute(f"INSERT INTO order_to_pizza(order_info, pizza) VALUES ({order_ID}, {pizza_id});")
 			for sidedish_id in items[1]:
 				print(sidedish_id)
-				self.execute(f"INSERT INTO order_to_side_dish(order_info, side_dish) VALUES ({order_ID}, {sidedish_id})")
-			self.execute(f"UPDATE order_info SET time = NOW() WHERE id = {order_ID};")
-			self.db.commit()
+				self.cursor.execute(f"INSERT INTO order_to_side_dish(order_info, side_dish) VALUES ({order_ID}, {sidedish_id});")
+			self.cursor.execute(f"UPDATE order_info SET time = NOW() WHERE id = {order_ID};")
+			self.db.commit() # They should commit together, instead of one by one.
 			return True
 		except sql.Error as error:
 			print("ERROR: " + str(error))
@@ -148,10 +168,10 @@ class PizzaDatabase:
 	
 	def delete_order(self, order_id):
 		try:
-			self.execute(f"DELETE FROM order_to_pizza WHERE order_info = {order_id}")
-			self.execute(f"DELETE FROM order_to_side_dish WHERE order_info = {order_id}")
-			self.execute(f"DELETE FROM order_info WHERE id = {order_id}")
-			self.db.commit()
+			self.cursor.execute(f"DELETE FROM order_to_pizza WHERE order_info = {order_id};")
+			self.cursor.execute(f"DELETE FROM order_to_side_dish WHERE order_info = {order_id};")
+			self.cursor.execute(f"DELETE FROM order_info WHERE id = {order_id};")
+			self.db.commit() # They should commit together, instead of one by one.
 		except sql.Error as error:
 			print("ERROR: " + str(error))
 
@@ -193,6 +213,6 @@ if __name__ == "__main__":
 	#print(id)
 	#items = [[1,2,3],[2]]
 	#print(db.set_order(items,id))
-	#print(db.get_total_price(items,1))
+	#print(type(db.get_total_price(items)))
 	#print(db.get_order_time(1))
 
