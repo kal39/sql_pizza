@@ -1,9 +1,9 @@
-from audioop import add
 from threading import Thread
 from time import sleep
-#import readline # importing this lets you use arrow keys and other stuff in input() 
+#import readline # importing this lets you use arrow keys and other stuff in input() # Not for Windows
 
 import database
+import datetime
 
 doc = """
 available commands: available, order, reset, help, quit
@@ -38,24 +38,22 @@ def input_thread_fn():
 		match command:
 			case "menu": # TODO: If we can use ID to order that would be more convinient.
 				print("- Pizza")
-				for pizza_name in db.get_all_pizza_names():
-					pizza = db.get_pizza(pizza_name)
-					print("  - " + pizza["name"].title() + " " + db.is_vegan(pizza["name"]))
-					price = 0
-					for ingredient_name in pizza["ingredients"]:
-						ingredient = db.get_ingredient(ingredient_name)
-						price += ingredient["price"]*1.4
-						print("    - " + ingredient["name"] + " : €" + str("%.2f" % (ingredient["price"]*1.4)))
-					print("    Price: €" + str("%.2f" % (price*1.09)) + " (incl. 9% VAT)\n")
+				pizzas = db.get_all_pizzas()
+				for pizza_id in pizzas:
+					show_pizza(db, pizza_id)
 				print("- Drinks & Deserts")
-				dd = db.get_all_sidedishes()
-				for name in dd:
-					print("  - "+name.title())
-					print("    Price: €" + str("%.2f" % (dd[name]*1.09)) + " (incl. 9% VAT)\n")
+				for each in db.get_all_sidedishes():
+					show_sidedish(each)
 			case "order":
-				orders = order(db) # TODO: order in database
-				set_order(db) # TODO: commit in database, set time, print order infos.
-				cusID = set_cus_info(db)
+				items = order(db)
+				cus_ID = set_cus_info(db)
+				order_id = place_order(db, items, cus_ID) # commit in database, set time 
+				print("Your order id is:", order_id)
+				show_order(db,items,1) # TODO: coupon
+				arrive_time = (db.get_order_time(order_id) +datetime.timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M")
+				print("Your order is expected to arrive around", arrive_time)# 10 mins making, 20 mins delivering
+			case "cancel":
+				cancel_order(db)
 			case "reset":
 				print("Resting database...")
 				db.reset()
@@ -80,7 +78,7 @@ def set_cus_info(db):
 		info = db.get_cus_info(id)
 		if info != None:
 			print(f"Your name: {info[1]}, address: {info[2]}, postcode: {info[3]}, phone number:{info[4]}.")
-			print("Login success!")
+			return id
 		else:
 			print("ID does not exist. Please create a new one.")
 	name = input("Your name > ").strip()
@@ -90,36 +88,82 @@ def set_cus_info(db):
 	id = db.add_customer(name,address,postcode,phoneNo)
 	return id
 
+# Order from terminal
 def order(db):
-	pizza_names = []
-	sidedish_names = []
+	pizza_IDs = []
+	sidedish_IDs = []
 	while(True):
-		command = input("Pizza, Desert & Drink, or Finishing ordering? (p/d/f) > ").strip().lower()
-		match command:
-			case "p":
-				name = input("Enter pizza name > ").strip().lower()
-				if db.is_exist(table = 'pizza', col = 'name', str = name):
-					pizza_names.append(name)
-				else:
-					print("Pizza does not exist.")
-			case "d":
-				name = input("Enter desert or drink name > ").strip().lower()
-				if db.is_exist(table = 'side_dish', col = 'name', str = name):
-					sidedish_names.append(name)
-				else:
-					print("Desert or Drink does not exist.")
-			case "f":
-				if(len(pizza_names) > 0):
-					break
-				else:
-					print("You have to order at least one pizza.")
-	print(pizza_names)
-	print(sidedish_names)
-	return [pizza_names,sidedish_names]
+		o = input("Enter food id, or 'f' to finish ordering > ").strip().lower()
+		if o[0] == 'p':
+			if db.is_exist(table = 'pizza',col = 'id', str = o[1:]):
+				pizza_IDs.append(o[1:])
+				show_pizza(db,pizza_id = o[1:])
+				print("Added in order.\n")
+			else:
+				print("Pizza does not exist.")
 
-def set_order(db):
-	pass
+		elif o[0] == 'd':
+			if db.is_exist(table = 'side_dish',col = 'id', str = o[1:]):
+				sidedish_IDs.append(o[1:]) 
+				show_sidedish(db.get_sidedish(o[1:]))
+				print("Added in order.\n")
+			else:
+				print("Drink or Desert does not exist.")
+				
+		elif o[0] == 'f':
+			if(len(pizza_IDs) > 0):
+				break
+			else:
+				print("You have to order at least one pizza.")
+		else:
+			print("Invalid input. Please try again.")
+	return [pizza_IDs,sidedish_IDs]
 
+# update in database
+def place_order(db, orders, cus_id):
+	if len(orders) < 1:
+		print("You haven't order anything. Please use 'order' to order.")
+	else:
+		order_id = db.create_order(cus_id)
+		if db.set_order(orders,order_id):
+			print("Ordered successfully. \n")
+			return order_id
+
+def cancel_order(db):
+	order_id = input("Enter your order ID > ")
+	if db.is_exist(table = 'order_info',col = 'id', str =order_id):
+		if((datetime.datetime.now() + datetime.timedelta(minutes=-5)) > db.get_order_time(order_id)):
+			print("You CANNOT cancel because your order is placed for more than 5 minuts.")
+		else:
+			db.delete_order(order_id)
+			print("Your order is canceled!")
+	else:
+		print("Order doesn't exist. Please try again.")
+
+def show_pizza(db, pizza_id):
+	pizza = db.get_pizza_info(pizza_id)
+	print("  - P" + str(pizza_id) + ": "+pizza["name"].title() + " " + db.is_vegan(pizza["name"]))
+	price = 0
+	for ingredient_name in pizza["ingredients"]:
+		ingredient = db.get_ingredient(ingredient_name)
+		price += ingredient["price"]*1.4
+		print("    - " + ingredient["name"] + " : €" + str("%.2f" % (ingredient["price"]*1.4)))
+	print("    Price: €" + str("%.2f" % (price*1.09)) + " (incl. 9% VAT)\n")
+				
+def show_sidedish(info):
+	print("  - D"+ str(info[0]) + ": "+ info[1].title())
+	print("    Price: €" + str("%.2f" % info[2]) + " (incl. 9% VAT)\n")
+
+def show_order(db, items, discount):
+	print("Your order detail: ")
+	print("- Pizza:")
+	for pizza_id in items[0]:
+		show_pizza(db,pizza_id)
+	print("- Desert & Drink:")
+	for did in items[1]:
+		show_sidedish(db.get_sidedish(did))
+	print("Total price: €", db.get_total_price(items,discount))
+	
 if __name__ == "__main__":
 	print("Starting app")
 

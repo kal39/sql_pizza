@@ -10,9 +10,6 @@ DESC table_name;
 Because I don't know why it cannot be shown in terminal if add this line in here :X
 '''
 
-from multiprocessing.util import is_exiting
-import re
-from tkinter.tix import Select
 import pymysql as sql
 
 verbose = False # if this is true PizzaDatabase will print out every sql command before executing it, useful for debugging
@@ -52,9 +49,10 @@ class PizzaDatabase:
 		self.__create_sql_database()
 		self.__populate_sql_database()
 	
-	def get_pizza(self, pizza_name):
-		self.execute("SELECT ingredient.name FROM ingredient INNER JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient INNER JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.name = '" + pizza_name + "';")
-		return {"name": pizza_name, "ingredients": list(map(lambda item: item[0], self.cursor.fetchall()))}
+	def get_pizza_info(self, pizza_id):
+		self.execute(f"SELECT pizza.name, ingredient.name FROM ingredient JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.id = '{pizza_id}';")
+		info = self.cursor.fetchall()
+		return {"name": info[0][0], "ingredients": [p[1] for p in info]}
 
 	def get_ingredient(self, ingredient_name):
 		self.execute("SELECT category, price FROM ingredient WHERE name = '" + ingredient_name + "';")
@@ -62,57 +60,100 @@ class PizzaDatabase:
 		return {"name": ingredient_name, "category": ingredient[0][0], "price": ingredient[0][1]} if len(ingredient) == 1 else None 
 
 	# returns a list of all pizza names
-	def get_all_pizza_names(self):
-		self.execute("SELECT name FROM pizza")
-		return list(map(lambda item: item[0], self.cursor.fetchall()))
-
-	def get_all_sidedishes(self):
-		self.execute("SELECT name, price from side_dish;")
+	def get_all_pizzas(self):
+		self.execute("SELECT * FROM pizza ORDER BY id;")
 		return {s[0]:s[1] for s in self.cursor.fetchall()}
 
-	def is_vegan(self,pizza_name):
-		self.execute("SELECT ingredient.category FROM ingredient INNER JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient INNER JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.name = '" + pizza_name + "';")
-		category = [c[0] for c in self.cursor.fetchall()]
-		for each in category:
-			if each != 'VEGETARIAN': return ""
-		return '(VEGETARIAN)'
+	def get_all_sidedishes(self):
+		self.execute("SELECT * FROM side_dish;")
+		return [s for s in self.cursor.fetchall()]
 
-	def add_order(self, customer_id):
-		if(not self.is_exist(table = 'customer',col = 'id', str = customer_id)):
-			print('Customer does not exist.')
-			return False
-		try:
-			self.execute(f"INSERT INTO order_info(customer) values ('{customer_id}');")
-			self.db.commit()
-			self.execute("SELECT last_insert_id();")
-			return self.cursor.fetchone()
-		except sql.Error as error:
-			print("ERROR: " + str(error))
-			return False
+	def get_sidedish(self,id):
+		self.execute(f"SELECT * FROM side_dish WHERE id= {id};")
+		return self.cursor.fetchone()
 
-	def add_customer(self, customer_name, address, postcode, phoneNo):
-		try:
-			self.execute(f"INSERT INTO customer(name, address, postcode, phone_number) values ('{customer_name}', '{address}', '{postcode}', '{phoneNo}');")
-			self.db.commit()
-			self.execute("SELECT last_insert_id();")
-			return self.cursor.fetchone()
-		except sql.Error as error:
-			print("ERROR: " + str(error))
-			return False
-
-	def is_exist(self, table, col, str):
-		self.execute(f"SELECT {col} FROM {table} WHERE {col} = '{str}' LIMIT 1;")
-		return self.cursor.fetchone() != None
-	
-	def order_pizzas(self,pizza_names):
-		pass
+	def get_sidedish(self, did):
+		self.execute(f"SELECT * FROM side_dish WHERE id = {did};")
+		return self.cursor.fetchone()
 
 	def get_cus_info(self, cus_id):
 		if(not self.is_exist(table = 'customer',col = 'id', str = cus_id)):
 			return None
 		else:
-			self.execute(f"SELECT * from customer where id = '{cus_id}';")
+			self.execute(f"SELECT * FROM customer WHERE id = '{cus_id}';")
 			return self.cursor.fetchone()
+
+	def get_total_price(self, items, discount):
+		price = 0
+		for pizza_id in items[0]:
+			pizza = self.get_pizza_info(pizza_id)
+			for ingredient_name in pizza["ingredients"]:
+				ingredient = self.get_ingredient(ingredient_name)
+				price += ingredient["price"]*1.4
+		for did in items[1]:
+			price += self.get_sidedish(did)[2]
+		price *= discount * 1.09
+		return ("%.2f" % price)
+
+	def get_order_time(self,order_id):
+		if(not self.is_exist('order_info','id',order_id)):
+			print("Order does not exist.")
+			return 
+		self.execute(f"SELECT time FROM order_info WHERE id = {order_id}")
+		return self.cursor.fetchone()[0]
+	
+	def is_vegan(self,pizza_name):
+		self.execute(f"SELECT ingredient.category FROM ingredient JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.name = '" + pizza_name + "';")
+		category = [c[0] for c in self.cursor.fetchall()]
+		for each in category:
+			if each != 'VEGETARIAN': return ""
+		return '(VEGETARIAN)'
+
+	def is_exist(self, table, col, str):
+		self.execute(f"SELECT {col} FROM {table} WHERE {col} = '{str}' LIMIT 1;")
+		return self.cursor.fetchone() != None
+
+	def create_customer(self, customer_name, address, postcode, phoneNo):
+		try:
+			self.execute(f"INSERT INTO customer(name, address, postcode, phone_number) values ('{customer_name}', '{address}', '{postcode}', '{phoneNo}');")
+			self.db.commit()
+			self.execute("SELECT last_insert_id();")
+			return self.cursor.fetchone()[0]
+		except sql.Error as error:
+			print("ERROR: " + str(error))
+			return False
+
+	def create_order(self, cus_id):
+		try:
+			self.execute(f"INSERT INTO order_info(customer) VALUES ({cus_id});")
+			self.db.commit()
+			self.execute("SELECT last_insert_id();")
+			return self.cursor.fetchone()[0]
+		except sql.Error as error:
+			print("ERROR: " + str(error))
+		
+	def set_order(self, items, order_ID):
+		try:
+			for pizza_id in items[0]:
+				self.execute(f"INSERT INTO order_to_pizza(order_info, pizza) VALUES ({order_ID}, {pizza_id})")
+			for sidedish_id in items[1]:
+				print(sidedish_id)
+				self.execute(f"INSERT INTO order_to_side_dish(order_info, side_dish) VALUES ({order_ID}, {sidedish_id})")
+			self.execute(f"UPDATE order_info SET time = NOW() WHERE id = {order_ID};")
+			self.db.commit()
+			return True
+		except sql.Error as error:
+			print("ERROR: " + str(error))
+			return False
+	
+	def delete_order(self, order_id):
+		try:
+			self.execute(f"DELETE FROM order_to_pizza WHERE order_info = {order_id}")
+			self.execute(f"DELETE FROM order_to_side_dish WHERE order_info = {order_id}")
+			self.execute(f"DELETE FROM order_info WHERE id = {order_id}")
+			self.db.commit()
+		except sql.Error as error:
+			print("ERROR: " + str(error))
 
 	# "private" function, check if the "pizza" database exists
 	def __sql_database_exists(self):
@@ -140,6 +181,18 @@ if __name__ == "__main__":
 	#print(db.is_exist('pizza','id','11'))
 	#print(db.is_exist(table = 'pizza',col='name',str = 'ham'))
 
-	print(db.get_cus_info(1))
-	# print(db.get_pizzas())
+	#print(db.get_cus_info(1))
+	#print(db.get_all_pizzas())
 	# print(db.get_ingredients_for("Vegan Fungi"))
+	#print(db.get_all_pizzas())
+	# print(db.get_pizza_info(1))
+
+	#cus_id = db.create_customer("cat","123","321","345")
+	#print(cus_id)
+	#id = db.create_order(1)
+	#print(id)
+	#items = [[1,2,3],[2]]
+	#print(db.set_order(items,id))
+	#print(db.get_total_price(items,1))
+	#print(db.get_order_time(1))
+
