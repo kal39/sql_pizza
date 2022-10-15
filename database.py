@@ -52,37 +52,38 @@ class PizzaDatabase:
         self.__create_sql_database()
         self.__populate_sql_database()
 
-    def get_pizza_info(self, pizza_id):
+    def get_pizza(self, id):
         self.execute(
-            f"SELECT pizza.name, ingredient.name FROM ingredient JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.id = '{pizza_id}';")
+            f"SELECT pizza.name, ingredient.id FROM ingredient JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.id = '{id}';")
         info = self.cursor.fetchall()
         return {"name": info[0][0], "ingredients": [p[1] for p in info]}
 
-    def get_ingredient(self, ingredient_name):
+    def get_ingredient(self, id):
         self.execute(
-            "SELECT category, price FROM ingredient WHERE name = '" + ingredient_name + "';")
-        ingredient = self.cursor.fetchall()
-        return {"name": ingredient_name, "category": ingredient[0][0], "price": ingredient[0][1]} if len(ingredient) == 1 else None
+            "SELECT name, category, price FROM ingredient WHERE id = '" + str(id) + "';")
+        ingredient = self.cursor.fetchone()
+        return {"name": ingredient[0], "category": ingredient[1], "price": ingredient[2]}
 
-    # returns a list of all pizza names
-    def get_all_pizzas(self):
-        self.execute("SELECT * FROM pizza ORDER BY id;")
-        return {s[0]: s[1] for s in self.cursor.fetchall()}
+    def get_side_dish(self, id):
+        self.execute(f"SELECT name, price FROM side_dish WHERE id= {id};")
+        side_dish = self.cursor.fetchone()
+        return {"name": side_dish[0], "price": side_dish[1]}
 
-    def get_all_sidedishes(self):
-        self.execute("SELECT * FROM side_dish;")
-        return [s for s in self.cursor.fetchall()]
-
-    def get_sidedish(self, id):
-        self.execute(f"SELECT * FROM side_dish WHERE id= {id};")
-        return self.cursor.fetchone()
-
-    def get_cus_info(self, cus_id):
-        if (not self.is_exist(table='customer', col='id', str=cus_id)):
-            return None
+    def get_customer(self, cus_id):
+        if (not self.is_exist(table='customer', col='id', str=cus_id)): return None
         else:
-            self.execute(f"SELECT * FROM customer WHERE id = '{cus_id}';")
-            return self.cursor.fetchone()
+            self.execute(f"SELECT name, address, postcode, phone_number FROM customer WHERE id = '{cus_id}';")
+            customer = self.cursor.fetchone()		
+            return {"name": customer[0], "address": customer[1], "postcode": customer[2], "phone_number": customer[3]}
+
+    # returns a list of all pizza ids
+    def get_all_pizza_ids(self):
+        self.execute("SELECT id FROM pizza;")
+        return [i[0] for i in self.cursor.fetchall()]
+
+    def get_all_side_dish_ids(self):
+        self.execute("SELECT id FROM side_dish;")
+        return [i[0] for i in self.cursor.fetchall()]
 
     def get_total_price(self, items):
         price = 0
@@ -156,19 +157,13 @@ class PizzaDatabase:
     def delete_coupon(self, coupon_id):
         self.cursor.execute(f"DELETE FROM coupon WHERE id = {coupon_id};")
 
-    def set_order(self, items, order_ID):
+    def set_order(self, order_id, pizzas, side_dishes):
         try:
-            for pizza_id in items[0]:
-                self.cursor.execute(
-                    f"INSERT INTO order_to_pizza(order_info, pizza) VALUES ({order_ID}, {pizza_id});")
-            for sidedish_id in items[1]:
-                print(sidedish_id)
-                self.cursor.execute(
-                    f"INSERT INTO order_to_side_dish(order_info, side_dish) VALUES ({order_ID}, {sidedish_id});")
-            self.cursor.execute(
-                f"UPDATE order_info SET time = NOW() WHERE id = {order_ID};")
-            # They should commit together, instead of one by one.
-            self.db.commit()
+            for id in pizzas: self.cursor.execute(f"INSERT INTO order_to_pizza(order_info, pizza) VALUES ({order_id}, {id});")
+            for id in side_dishes: self.cursor.execute(f"INSERT INTO order_to_side_dish(order_info, side_dish) VALUES ({order_id}, {id});")
+            self.cursor.execute(f"UPDATE order_info SET time = NOW() WHERE id = {order_id};")
+            
+            self.db.commit() # They should commit together, instead of one by one.
             return True
         except sql.Error as error:
             print("ERROR: " + str(error))

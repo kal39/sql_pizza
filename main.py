@@ -1,14 +1,13 @@
 from threading import Thread
 from time import sleep
-# import readline # importing this lets you use arrow keys and other stuff in input() # Not for Windows
+# import readline  # importing this lets you use arrow keys and other stuff in input() # Not for Windows
 
 import database
 import datetime
 
 doc = """
-available commands: available, order, reset, help, quit
-
-- available
+available commands:
+- menu
   Prints available pizzas, drinks and desserts
 - order
   Place a new order.
@@ -26,42 +25,35 @@ db = database.PizzaDatabase()
 running = False  # the input and system threads will stop whenever this is set to false
 
 # This thread will get orders from the terminal
-
-
 def input_thread_fn():
     global db, running  # this is a threaded function, so this is needed, idk why
 
     while running:
-        input_str = input(
-            "Enter command (\"help\" for available commands)\n > ").strip()
+        input_str = input("Enter command (\"help\" for available commands)\n > ").strip()
 
-        command = input_str.split(" ", 1)[0].lower()
-        args = input_str.split(" ")[1:] if len(
-            input_str.split(" ", 1)) > 1 else []
+        command = input_str.lower().split(" ", 1)[0]
+        args = input_str.lower().split(" ")[1:] if len(input_str.split(" ", 1)) > 1 else []
 
         match command:
-            case "menu":  # TODO: If we can use ID to order that would be more convinient.
-                print("- Pizza")
-                pizzas = db.get_all_pizzas()
-                for pizza_id in pizzas:
-                    show_pizza(db, pizza_id)
-                print("- Drinks & Deserts")
-                for each in db.get_all_sidedishes():
-                    show_sidedish(each)
+            case "menu":  # TODO: If we can use ID to order that would be more convenient.
+                print("- Pizzas:")
+                for pizza_id in db.get_all_pizza_ids(): show_pizza(db, pizza_id)
+                print("- Drinks & Deserts:")
+                for side_dish_id in db.get_all_side_dish_ids(): show_side_dish(db, side_dish_id)
+
             case "order":
-                items = order(db)
-                cus_ID = set_cus_info(db)
-                # commit in database, set time
-                order_id = place_order(db, items, cus_ID)
+                (pizzas, side_dishes) = parse_order(db, args)
+                if pizzas == []: continue
+                customer_id = get_customer(db)
+                order_id = place_order(db, customer_id, pizzas, side_dishes)
+
                 print("Your order id is:", order_id)
-                coupon(db, items)
-                show_order(db, items, check_coupon(db))
-                arrive_time = (db.get_order_time(
-                    order_id) + datetime.timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M")
-                # 10 mins making, 20 mins delivering
-                print("Your order is expected to arrive around", arrive_time)
+                # coupon(db, items)
+                arrival_time = (db.get_order_time(order_id) + datetime.timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M")
+                print("Your order is expected to arrive at", arrival_time)
+
             case "cancel":
-                cancel_order(db)
+                for order in args: cancel_order(db, order)
             case "reset":
                 print("Resting database...")
                 db.reset()
@@ -71,8 +63,6 @@ def input_thread_fn():
             case _: print("Unknown command \"" + command + "\"")
 
 # This thread will take care of sending out the deliverymen and other non-input stuff
-
-
 def system_thread_fn():
     global db, running  # this is a threaded function, so this is needed, idk why
 
@@ -80,85 +70,61 @@ def system_thread_fn():
         sleep(1)  # only check for updates every second
         # TODO: implement
 
-# Setting customer information without any checking
+# takes in a list of ids and checks if they are all valid
+# if valid, the ids are converted into ids usable directly in the database
+def parse_order(db, ids):
+    pizzas = []
+    side_dishes = []
 
-
-def set_cus_info(db):
-    hasID = input("Do you have an customer ID? (y/n) > ").strip().lower()
-    if hasID == 'y':
-        id = input("Your customer ID > ").strip()
-        info = db.get_cus_info(id)
-        if info != None:
-            print(
-                f"Your name: {info[1]}, address: {info[2]}, postcode: {info[3]}, phone number:{info[4]}.")
-            return id
+    for id in ids: 
+        if id[0] == 'p' and db.is_exist('pizza', 'id', id[1:]): pizzas.append(id[1:])
+        elif id[0] == 'd' and db.is_exist('side_dish', 'id', id[1:]): side_dishes.append(id[1:])
         else:
-            print("ID does not exist. Please create a new one.")
-    name = input("Your name > ").strip()
-    address = input("Your address > ").strip()
-    postcode = input("Postcode > ").strip()
-    phoneNo = input("Your phone number > ").strip()
-    id = db.add_customer(name, address, postcode, phoneNo)
-    return id
+            print(f"invalid id '{id}'")
+            return ([], [])
 
-# Order from terminal
+    if pizzas == []:
+        print("order at least one pizza")
+        return ([], [])
 
+    print("Ordering:")
 
-def order(db):
-    pizza_IDs = []
-    sidedish_IDs = []
-    while (True):
-        o = input("Enter food id, or 'f' to finish ordering > ").strip().lower()
-        if o[0] == 'p':
-            if db.is_exist(table='pizza', col='id', str=o[1:]):
-                pizza_IDs.append(o[1:])
-                show_pizza(db, pizza_id=o[1:])
-                print("Added in order.\n")
+    for id in pizzas: show_pizza(db, id)
+    for id in side_dishes: show_side_dish(db, id)
+
+    return (pizzas, side_dishes)
+
+def get_customer(db):
+    while(True): # loop until valid customer has been made  
+        if input("Do you have an customer ID? (y/n) > ").strip().lower() == 'y':
+            id = input("Your customer ID > ").strip()
+            customer = db.get_customer(id)
+            if customer != None:
+                print(f"name: {customer['name']}, address: {customer['address']}, postcode: {customer['postcode']}, phone number: {customer['phone_number']}.")
+                return id
             else:
-                print("Pizza does not exist.")
+                print("ID does not exist.")
+                continue
+        name = input("Name > ").strip()
+        address = input("Address > ").strip()
+        postcode = input("Postcode > ").strip()
+        phone = input("Phone number > ").strip()
+        return db.create_customer(name, address, postcode, phone)
 
-        elif o[0] == 'd':
-            if db.is_exist(table='side_dish', col='id', str=o[1:]):
-                sidedish_IDs.append(o[1:])
-                show_sidedish(db.get_sidedish(o[1:]))
-                print("Added in order.\n")
-            else:
-                print("Drink or Desert does not exist.")
+def place_order(db, customer_id, pizzas, side_dishes):
+    order_id = db.create_order(customer_id)
+    db.set_order(order_id, pizzas, side_dishes)
+    return order_id
 
-        elif o[0] == 'f':
-            if (len(pizza_IDs) > 0):
-                break
-            else:
-                print("You have to order at least one pizza.")
+def cancel_order(db, id):
+    if db.is_exist("order_info", "id", id):
+        if datetime.datetime.now() + datetime.timedelta(minutes=-5) > db.get_order_time(id):
+            print(f"Cannot cancel order {id} because for more than 5 minutes have passed.")
         else:
-            print("Invalid input. Please try again.")
-    return [pizza_IDs, sidedish_IDs]
-
-# update in database
-
-
-def place_order(db, orders, cus_id):
-    if len(orders) < 1:
-        print("You haven't order anything. Please use 'order' to order.")
-    else:
-        order_id = db.create_order(cus_id)
-        if db.set_order(orders, order_id):
-            print("Ordered successfully. \n")
-            return order_id
-
-
-def cancel_order(db):
-    order_id = input("Enter your order ID > ").strip().lower()
-    if db.is_exist(table='order_info', col='id', str=order_id):
-        if ((datetime.datetime.now() + datetime.timedelta(minutes=-5)) > db.get_order_time(order_id)):
-            print(
-                "You CANNOT cancel because your order is placed for more than 5 minuts.")
-        else:
-            db.delete_order(order_id)
-            print("Your order is canceled!")
+            db.delete_order(id)
+            print(f"Cancelled order {id}")
     else:
         print("Order doesn't exist. Please try again.")
-
 
 def coupon(db, items):
     if len(items[0]) >= 10:
@@ -167,9 +133,8 @@ def coupon(db, items):
         print("You can use it for 10% \discount next time.")
         db.send_coupon(coupon_id)
 
-
 def show_pizza(db, pizza_id):
-    pizza = db.get_pizza_info(pizza_id)
+    pizza = db.get_pizza(pizza_id)
     print("  - P" + str(pizza_id) + ": " +
           pizza["name"].title() + " " + db.is_vegan(pizza["name"]))
     price = 0
@@ -180,11 +145,10 @@ def show_pizza(db, pizza_id):
               str("%.2f" % (ingredient["price"]*1.4)))
     print("    Price: €" + str("%.2f" % (price*1.09)) + " (incl. 9% VAT)\n")
 
-
-def show_sidedish(info):
-    print("  - D" + str(info[0]) + ": " + info[1].title())
-    print("    Price: €" + str("%.2f" % info[2]) + " (incl. 9% VAT)\n")
-
+def show_side_dish(db, side_dish_id):
+    side_dish = db.get_side_dish(side_dish_id)
+    print("  - D" + str(side_dish_id) + ": " + side_dish["name"])
+    print("    Price: €" + str("%.2f" % side_dish["price"]) + " (incl. 9% VAT)\n")
 
 def check_coupon(db):
     while (True):
@@ -196,20 +160,6 @@ def check_coupon(db):
             return 0.9
         else:
             print("Invalid coupon. Please try again.")
-
-
-def show_order(db, items, discount):
-    print("Your order detail: ")
-    print("- Pizza:")
-    for pizza_id in items[0]:
-        show_pizza(db, pizza_id)
-    print("- Desert & Drink:")
-    for side_id in items[1]:
-        show_sidedish(db.get_sidedish(side_id))
-    original = db.get_total_price(items)
-    print(
-        f'Total price: € {("%.2f" % (original * discount))} (original price: € {("%.2f" % original)})')
-
 
 if __name__ == "__main__":
     print("Starting app")
@@ -224,5 +174,3 @@ if __name__ == "__main__":
 
     input_thread.join()
     system_thread.join()
-
-    print("Exiting app")
