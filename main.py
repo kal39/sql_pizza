@@ -8,9 +8,9 @@ doc = """
 available commands:
 - menu
   Prints available pizzas, drinks and desserts
-- order
-  Place a new order.
-- cancel
+- order item1, item2, ...
+  Place a new order. Add items splitted by a single space.
+- cancel customer_id
   Cancel an existing order
 - reset
   Rest the database to the initial state
@@ -117,7 +117,7 @@ def setup_delivery(db, postcode):
     cooking_time = datetime.datetime.now() + datetime.timedelta(minutes=10)
 
     # find the deliveryman available the earliest
-    for deliveryman_id in db.get_all_deliveryman_ids('deliveryman'):
+    for deliveryman_id in db.get_all_ids('deliveryman'):
         deliveryman = db.get_deliveryman(deliveryman_id)
         if deliveryman["postcode"] == postcode:
             if deliveryman["time"] == None or deliveryman["time"] < cooking_time:
@@ -164,7 +164,7 @@ if __name__ == "__main__":
                 print("+-----------------------------------------------------------+")
                 coupon(db, customer_id)
 
-                postcode = db.get_customer(customer_id)["postcode"]
+                postcode = db.get_customer(customer_id)["postcode"][:4]
                 delivery_start_time = setup_delivery(db, postcode)
 
                 if delivery_start_time == None:

@@ -73,7 +73,7 @@ class PizzaDatabase:
         return {"name": deliveryman[0], "postcode": deliveryman[1], "time": deliveryman[2]}
 
     # returns a list of all ids
-    def get_all_deliveryman_ids(self, table):
+    def get_all_ids(self, table):
         self.__execute(f"SELECT id FROM {table};")
         return [i[0] for i in self.cursor.fetchall()]
 
