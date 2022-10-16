@@ -1,3 +1,4 @@
+from operator import pos
 from threading import Thread
 from time import sleep
 
@@ -67,12 +68,14 @@ def setup_customer(db):
             address = input("Address > ").strip()
             postcode = input("Postcode > ").strip()
             phone = input("Phone number > ").strip()
-            if(not db.exists('deliveryman','postcode',postcode[:4])):
+            if(not postcode[:4].isdigit()):
+                print("Invalid postcode. Please write postcode like 1234XX.")
+            elif(not db.exists('deliveryman','postcode',postcode[:4])):
                 print(f"Cannot deliver to postal code {postcode}. Please try another address.")
             else:
                 break
         customer_id = db.create_customer(name, address, postcode, phone)
-        print("Registered successfully! Your customer id is", customer_id)
+        print("- Registered successfully! Your customer id is", customer_id)
         return customer_id
 
 def cancel_order(db, id):
@@ -176,7 +179,7 @@ if __name__ == "__main__":
                 if delivery_start_time == None:
                     print(f"cannot deliver to postal code {postcode}. Please try another address.")
                     db.delete_order(order_id)
-                else: print("Your order will be out for delivery at", delivery_start_time)
+                else: print("- Your order will be out for delivery at", delivery_start_time)
             case "cancel":
                 for order in args:
                     cancel_order(db, order)

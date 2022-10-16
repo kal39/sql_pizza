@@ -222,7 +222,7 @@ class PizzaDatabase:
             if(deliveryman['time'] is None) or (datetime.datetime.now() > deliveryman['time']):
                 print(f"Deliveryman id: {id}, name: {deliveryman['name']}, area: {deliveryman['postcode']} is now available.")
             else:
-                print(f"Deliveryman id: {id}, name: {deliveryman['name']}, area: {deliveryman['postcode']} is outside delivering.")
+                print(f"Deliveryman id: {id}, name: {deliveryman['name']}, area: {deliveryman['postcode']} is outside delivering. Will be avaliable at: {deliveryman['time']}")
 
     # "private" function, executes sql command
     # replaces newlines and tabs with spaces
