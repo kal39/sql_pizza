@@ -11,6 +11,7 @@ Because I don't know why it cannot be shown in terminal if add this line in here
 '''
 
 import pymysql as sql
+import datetime
 
 verbose = False  # if this is true PizzaDatabase will print out every sql command before executing it, useful for debugging
 
@@ -113,8 +114,7 @@ class PizzaDatabase:
         return '(VEGETARIAN)'
 
     def exists(self, table, col, str):
-        self.__execute(
-            f"SELECT {col} FROM {table} WHERE {col} = '{str}' LIMIT 1;")
+        self.__execute(f"SELECT {col} FROM {table} WHERE {col} = '{str}' LIMIT 1;")
         return self.cursor.fetchone() != None
 
     def create_customer(self, customer_name, address, postcode, phoneNo):
@@ -214,6 +214,15 @@ class PizzaDatabase:
                 print(f"  - {side_dish['name']}     €{'%.2f' % side_dish['price']}")
             price += self.get_side_dish(side_id)["price"]
         return price
+
+    def print_deliverymen(self):
+        ids = self.get_all_ids('deliveryman')
+        for id in ids:
+            deliveryman = self.get_deliveryman(id)
+            if(deliveryman['time'] is None) or (datetime.datetime.now() > deliveryman['time']):
+                print(f"Deliveryman id: {id}, name: {deliveryman['name']}, area: {deliveryman['postcode']} is now available.")
+            else:
+                print(f"Deliveryman id: {id}, name: {deliveryman['name']}, area: {deliveryman['postcode']} is outside delivering.")
 
     # "private" function, executes sql command
     # replaces newlines and tabs with spaces

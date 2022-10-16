@@ -35,7 +35,7 @@ CREATE TABLE customer(
 CREATE TABLE deliveryman(
 	id INT PRIMARY KEY AUTO_INCREMENT,
 	name VARCHAR(50),
-	postcode VARCHAR(6) NOT NULL,
+	postcode VARCHAR(4) NOT NULL,
 	time DATETIME
 );
 

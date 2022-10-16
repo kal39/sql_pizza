@@ -11,7 +11,9 @@ available commands:
 - order item1, item2, ...
   Place a new order. Add items splitted by a single space.
 - cancel customer_id
-  Cancel an existing order
+  Cancel an existing order by customer id.
+- delivery
+  Check all deliverymen's status.
 - reset
   Rest the database to the initial state
 - help
@@ -60,10 +62,15 @@ def setup_customer(db):
             else:
                 print("ID does not exist.")
                 continue
-        name = input("Name > ").strip()
-        address = input("Address > ").strip()
-        postcode = input("Postcode > ").strip()
-        phone = input("Phone number > ").strip()
+        while(True):
+            name = input("Name > ").strip()
+            address = input("Address > ").strip()
+            postcode = input("Postcode > ").strip()
+            phone = input("Phone number > ").strip()
+            if(not db.exists('deliveryman','postcode',postcode[:4])):
+                print(f"Cannot deliver to postal code {postcode}. Please try another address.")
+            else:
+                break
         customer_id = db.create_customer(name, address, postcode, phone)
         print("Registered successfully! Your customer id is", customer_id)
         return customer_id
@@ -71,8 +78,7 @@ def setup_customer(db):
 def cancel_order(db, id):
     if db.exists("order_info", "id", id):
         if datetime.datetime.now() + datetime.timedelta(minutes=-5) > db.get_order_time(id):
-            print(
-                f"Cannot cancel order {id} because for more than 5 minutes have passed.")
+            print(f"Cannot cancel order {id} because for more than 5 minutes have passed.")
         else:
             db.delete_order(id)
             print(f"Cancelled order {id}")
@@ -168,10 +174,9 @@ if __name__ == "__main__":
                 delivery_start_time = setup_delivery(db, postcode)
 
                 if delivery_start_time == None:
-                    print(f"cannot deliver to postal code {postcode}")
+                    print(f"cannot deliver to postal code {postcode}. Please try another address.")
                     db.delete_order(order_id)
                 else: print("Your order will be out for delivery at", delivery_start_time)
-
             case "cancel":
                 for order in args:
                     cancel_order(db, order)
@@ -179,6 +184,8 @@ if __name__ == "__main__":
                 print("Resting database...")
                 db.reset()
                 print("done")
+            case "delivery":
+                db.print_deliverymen()
             case "help": print(doc)
             case "quit": exit(0)
             case _: print("Unknown command \"" + command + "\"")
