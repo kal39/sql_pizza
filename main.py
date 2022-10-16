@@ -20,69 +20,6 @@ available commands:
   Quite the app.
 """
 
-db = database.PizzaDatabase()
-running = False  # the input and system threads will stop whenever this is set to false
-
-# This thread will get orders from the terminal
-def input_thread_fn():
-    global db, running  # this is a threaded function, so this is needed, idk why
-
-    while running:
-        input_str = input(
-            "Enter command (\"help\" for available commands)\n > ").strip().lower()
-
-        command = input_str.split(" ", 1)[0]
-        args = input_str.split(" ")[1:] if len(
-            input_str.split(" ", 1)) > 1 else []
-
-        match command:
-            case "menu":
-                print("- Pizzas:")
-                for pizza_id in db.get_all_ids('pizza'):
-                    db.print_pizza(pizza_id)
-                print("- Drinks & Deserts:")
-                for side_dish_id in db.get_all_ids('side_dish'):
-                    db.print_side_dish(side_dish_id)
-
-            case "order":
-                (pizzas, side_dishes) = parse_order(db, args)
-                if pizzas == []:
-                    continue
-                customer_id = setup_customer(db)
-                order_id = db.place_order(customer_id, pizzas, side_dishes)
-                discount = check_coupon(db)
-                print("+-----------------------------------------------------------+")
-                print("- Your order id is:", order_id)
-                show_order(db, pizzas, side_dishes, discount)
-                print("+-----------------------------------------------------------+")
-                coupon(db, customer_id)
-                arrival_time = (db.get_order_time(order_id) + datetime.timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M")
-                print("- Your order is expected to arrive at", arrival_time)
-
-            case "cancel":
-                for order in args:
-                    cancel_order(db, order)
-            case "reset":
-                print("Resting database...")
-                db.reset()
-                print("done")
-            case "help": print(doc)
-            case "quit": running = False
-            case _: print("Unknown command \"" + command + "\"")
-
-# This thread will take care of sending out the deliverymen and other non-input stuff
-def system_thread_fn():
-    global db, running  # this is a threaded function, so this is needed, idk why
-
-    while running:
-        order_ids = db.get_all_ids('order_info')
-        for id in order_ids:
-            order = db.get_order(id)
-            if datetime.datetime.now() + datetime.timedelta(minutes=-10) > order["time"]:
-                deliver_order(db, id)
-
-        sleep(1)  # only check for updates every second
-
 # takes in a list of ids and checks if they are all valid
 # if valid, the ids are converted into ids usable directly in the database
 def parse_order(db, ids):
@@ -169,20 +106,77 @@ def coupon(db, customer_id):
 
 # Since one of requirment is 'make sure that you show how you calculate the pizza prices', it's better to keep this.
 def show_order(db, pizzas, side_dishes, discount):
-	print("Your order detail: ")
-	original = db.print_order(pizzas, side_dishes)
-	print(f'- Total price: € {("%.2f" % (original * discount))} (original price: € {("%.2f" % original)})')
+    print("Your order detail: ")
+    original = db.print_order(pizzas, side_dishes)
+    print(f'- Total price: € {("%.2f" % (original * discount))} (original price: € {("%.2f" % original)})')
 
+def setup_delivery(db, postcode):
+    fastest_delivery = {"time": None, "id": None}
+    cooking_time = datetime.datetime.now() + datetime.timedelta(minutes=10)
+
+    # find the deliveryman available the earliest
+    for deliveryman_id in db.get_all_deliveryman_ids('deliveryman'):
+        deliveryman = db.get_deliveryman(deliveryman_id)
+        if deliveryman["postcode"] == postcode:
+            if deliveryman["time"] == None or deliveryman["time"] < cooking_time:
+                deliveryman["time"] = cooking_time
+
+            if fastest_delivery["time"] == None or deliveryman["time"] < fastest_delivery["time"]:
+                fastest_delivery["time"] = deliveryman["time"]
+                fastest_delivery["id"] = deliveryman_id
+
+    db.set_deliveryman_time(fastest_delivery["id"], fastest_delivery["time"] + datetime.timedelta(minutes=30))
+    return fastest_delivery["time"]
+
+# This thread will get orders from the terminal
 if __name__ == "__main__":
-    print("Starting app")
+    db = database.PizzaDatabase()
 
-    input_thread = Thread(target=input_thread_fn)
-    system_thread = Thread(target=system_thread_fn)
+    while True:
+        input_str = input(
+            "Enter command (\"help\" for available commands)\n > ").strip().lower()
 
-    running = True
+        command = input_str.split(" ", 1)[0]
+        args = input_str.split(" ")[1:] if len(
+            input_str.split(" ", 1)) > 1 else []
 
-    input_thread.start()
-    system_thread.start()
+        match command:
+            case "menu":
+                print("- Pizzas:")
+                for pizza_id in db.get_all_ids('pizza'):
+                    db.print_pizza(pizza_id)
+                print("- Drinks & Deserts:")
+                for side_dish_id in db.get_all_ids('side_dish'):
+                    db.print_side_dish(side_dish_id)
 
-    input_thread.join()
-    system_thread.join()
+            case "order":
+                (pizzas, side_dishes) = parse_order(db, args)
+                if pizzas == []:
+                    continue
+                customer_id = setup_customer(db)
+                order_id = db.place_order(customer_id, pizzas, side_dishes)
+                discount = check_coupon(db)
+                print("+-----------------------------------------------------------+")
+                print("- Your order id is:", order_id)
+                show_order(db, pizzas, side_dishes, discount)
+                print("+-----------------------------------------------------------+")
+                coupon(db, customer_id)
+
+                postcode = db.get_customer(customer_id)["postcode"]
+                delivery_start_time = setup_delivery(db, postcode)
+
+                if delivery_start_time == None:
+                    print(f"cannot deliver to postal code {postcode}")
+                    db.delete_order(order_id)
+                else: print("Your order will be out for delivery at", delivery_start_time)
+
+            case "cancel":
+                for order in args:
+                    cancel_order(db, order)
+            case "reset":
+                print("Resting database...")
+                db.reset()
+                print("done")
+            case "help": print(doc)
+            case "quit": exit(0)
+            case _: print("Unknown command \"" + command + "\"")

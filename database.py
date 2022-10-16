@@ -73,7 +73,7 @@ class PizzaDatabase:
         return {"name": deliveryman[0], "postcode": deliveryman[1], "time": deliveryman[2]}
 
     # returns a list of all ids
-    def get_all_ids(self, table):
+    def get_all_deliveryman_ids(self, table):
         self.__execute(f"SELECT id FROM {table};")
         return [i[0] for i in self.cursor.fetchall()]
 
@@ -167,8 +167,8 @@ class PizzaDatabase:
         else:
             return False
 
-    def set_deliveryman_time(self, id):
-        self.__execute(f"UPDATE deliveryman SET time = NOW() WHERE id = {id};")
+    def set_deliveryman_time(self, id, time):
+        self.__execute(f"UPDATE deliveryman SET time = '{time.strftime('%Y-%m-%d %H:%M:%S')}' WHERE id = {id};")
 
     def delete_coupon(self, coupon_id):
         self.__execute(f"DELETE FROM coupon WHERE id = {coupon_id};")
