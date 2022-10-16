@@ -64,7 +64,9 @@ def setup_customer(db):
         address = input("Address > ").strip()
         postcode = input("Postcode > ").strip()
         phone = input("Phone number > ").strip()
-        return db.create_customer(name, address, postcode, phone)
+        customer_id = db.create_customer(name, address, postcode, phone)
+        print("Registered successfully! Your customer id is", customer_id)
+        return customer_id
 
 def cancel_order(db, id):
     if db.exists("order_info", "id", id):
