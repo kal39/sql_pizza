@@ -38,10 +38,10 @@ def input_thread_fn():
         match command:
             case "menu":
                 print("- Pizzas:")
-                for pizza_id in db.get_all_pizza_ids():
+                for pizza_id in db.get_all_ids('pizza'):
                     db.print_pizza(pizza_id)
                 print("- Drinks & Deserts:")
-                for side_dish_id in db.get_all_side_dish_ids():
+                for side_dish_id in db.get_all_ids('side_dish'):
                     db.print_side_dish(side_dish_id)
 
             case "order":
@@ -50,11 +50,13 @@ def input_thread_fn():
                     continue
                 customer_id = setup_customer(db)
                 order_id = db.place_order(customer_id, pizzas, side_dishes)
-                check_coupon(db)
+                discount = check_coupon(db)
+                print("+-----------------------------------------------------------+")
                 print("- Your order id is:", order_id)
+                show_order(db, pizzas, side_dishes, discount)
+                print("+-----------------------------------------------------------+")
                 coupon(db, customer_id)
-                arrival_time = (db.get_order_time(
-                    order_id) + datetime.timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M")
+                arrival_time = (db.get_order_time(order_id) + datetime.timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M")
                 print("- Your order is expected to arrive at", arrival_time)
 
             case "cancel":
@@ -73,7 +75,7 @@ def system_thread_fn():
     global db, running  # this is a threaded function, so this is needed, idk why
 
     while running:
-        order_ids = db.get_all_order_ids()
+        order_ids = db.get_all_ids('order_info')
         for id in order_ids:
             order = db.get_order(id)
             if datetime.datetime.now() + datetime.timedelta(minutes=-10) > order["time"]:
@@ -139,11 +141,10 @@ def cancel_order(db, id):
         print("Order doesn't exist. Please try again.")
 
 def deliver_order(db, id):
-    for deliveryman_id in db.get_all_deliverymen_ids():
+    for deliveryman_id in db.get_all_ids('deliveryman'):
         deliveryman = db.get_deliveryman(deliveryman_id)
         if deliveryman["time"] == None or datetime.datetime.now() + datetime.timedelta(minutes=-20) > deliveryman["time"]:
-            print(
-                f"{deliveryman['name']} is now delivering order {id}, it will arrive in 20 minutes")
+            print(f"{deliveryman['name']} is now delivering order {id}, it will arrive in 20 minutes")
             db.delete_order(id)
             db.set_deliveryman_time(id)
             return
@@ -159,13 +160,18 @@ def check_coupon(db):
         else:
             print("Invalid coupon. Please try again.")
 
-
 def coupon(db, customer_id):
     coupon_id = db.get_coupon(customer_id)
     if coupon_id != -1:
         print("- You've ordered more than 10 pizzas. Here's a coupon id:", coupon_id)
         print("- You can use it for 10% discount next time.")
         db.send_coupon(coupon_id)
+
+# Since one of requirment is 'make sure that you show how you calculate the pizza prices', it's better to keep this.
+def show_order(db, pizzas, side_dishes, discount):
+	print("Your order detail: ")
+	original = db.print_order(pizzas, side_dishes)
+	print(f'- Total price: € {("%.2f" % (original * discount))} (original price: € {("%.2f" % original)})')
 
 if __name__ == "__main__":
     print("Starting app")
