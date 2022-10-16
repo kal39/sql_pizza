@@ -28,7 +28,8 @@ CREATE TABLE customer(
 	name VARCHAR(50),
 	address VARCHAR(128) NOT NULL,
 	postcode VARCHAR(6) NOT NULL,
-	phone_number VARCHAR(12)
+	phone_number VARCHAR(12),
+	accumulation INT DEFAULT 0
 );
 
 CREATE TABLE deliveryman(
