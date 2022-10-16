@@ -37,14 +37,12 @@ class PizzaDatabase:
         self.__populate_sql_database()
 
     def get_pizza(self, id):
-        self.__execute(
-            f"SELECT pizza.name, ingredient.id FROM ingredient JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.id = '{id}';")
+        self.__execute(f"SELECT pizza.name, ingredient.id FROM ingredient JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.id = '{id}';")
         info = self.cursor.fetchall()
         return {"name": info[0][0], "ingredients": [p[1] for p in info]}
 
     def get_ingredient(self, id):
-        self.__execute(
-            "SELECT name, category, price FROM ingredient WHERE id = '" + str(id) + "';")
+        self.__execute("SELECT name, category, price FROM ingredient WHERE id = '" + str(id) + "';")
         ingredient = self.cursor.fetchone()
         return {"name": ingredient[0], "category": ingredient[1], "price": ingredient[2]}
 
@@ -56,42 +54,27 @@ class PizzaDatabase:
     def get_customer(self, id):
         if (not self.exists(table='customer', col='id', str=id)):
             return None
-        self.__execute(
-            f"SELECT name, address, postcode, phone_number FROM customer WHERE id = '{id}';")
+        self.__execute(f"SELECT name, address, postcode, phone_number FROM customer WHERE id = '{id}';")
         customer = self.cursor.fetchone()
         return {"name": customer[0], "address": customer[1], "postcode": customer[2], "phone_number": customer[3]}
 
     def get_order(self, id):
         if (not self.exists(table='order_info', col='id', str=id)):
             return None
-        self.__execute(
-            f"SELECT customer, time FROM order_info WHERE id = '{id}';")
+        self.__execute(f"SELECT customer, time FROM order_info WHERE id = '{id}';")
         order = self.cursor.fetchone()
         return {"customer": order[0], "time": order[1]}
 
     def get_deliveryman(self, id):
         if (not self.exists(table='deliveryman', col='id', str=id)):
             return None
-        self.__execute(
-            f"SELECT name, postcode, time FROM deliveryman WHERE id = '{id}';")
+        self.__execute(f"SELECT name, postcode, time FROM deliveryman WHERE id = '{id}';")
         deliveryman = self.cursor.fetchone()
         return {"name": deliveryman[0], "postcode": deliveryman[1], "time": deliveryman[2]}
 
-    # returns a list of all pizza ids
-    def get_all_pizza_ids(self):
-        self.__execute("SELECT id FROM pizza;")
-        return [i[0] for i in self.cursor.fetchall()]
-
-    def get_all_side_dish_ids(self):
-        self.__execute("SELECT id FROM side_dish;")
-        return [i[0] for i in self.cursor.fetchall()]
-
-    def get_all_order_ids(self):
-        self.__execute("SELECT id FROM order_info;")
-        return [i[0] for i in self.cursor.fetchall()]
-
-    def get_all_deliverymen_ids(self):
-        self.__execute("SELECT id FROM deliveryman;")
+    # returns a list of all ids
+    def get_all_ids(self, table):
+        self.__execute(f"SELECT id FROM {table};")
         return [i[0] for i in self.cursor.fetchall()]
 
     def get_order_time(self, order_id):
@@ -101,16 +84,23 @@ class PizzaDatabase:
         self.__execute(f"SELECT time FROM order_info WHERE id = {order_id};")
         return self.cursor.fetchone()[0]
 
+# THEY SHOULD BE COMMITTED TOGETHER
+# If there's any error in any of these lines, none of them should be committed.
+# DO NOT CHANGE BACK TO __execute
     def get_coupon(self, customer_id):
-        self.__execute(
-            f"SELECT accumulation FROM customer WHERE id = {customer_id};")
+        self.__execute(f"SELECT accumulation FROM customer WHERE id = {customer_id};")
         pizza_number = self.cursor.fetchone()[0]
         if (pizza_number >= 10):
-            self.__execute(
-                f"UPDATE customer SET accumulation = accumulation - 10 WHERE id = {customer_id}")
-            self.__execute("INSERT INTO coupon() VALUES();")
-            self.__execute("SELECT id FROM coupon WHERE status = 0 LIMIT 1;")
-            return self.cursor.fetchone()[0]
+            try:
+                self.cursor.execute(f"UPDATE customer SET accumulation = accumulation - 10 WHERE id = {customer_id}")
+                self.cursor.execute("INSERT INTO coupon() VALUES();")
+                self.db.commit()
+                self.cursor.execute("SELECT id FROM coupon WHERE status = 0 LIMIT 1;")
+                return self.cursor.fetchone()[0]   
+            except sql.Error as error:
+                self.db.rollback()
+                print("ERROR in getting coupon: " + str(error))
+                return -1
         else:
             return -1
 
@@ -133,33 +123,39 @@ class PizzaDatabase:
         self.__execute("SELECT last_insert_id();")
         return self.cursor.fetchone()[0]
 
+# THEY SHOULD BE COMMITTED TOGETHER
+# If there's any error in any of these lines, none of them should be committed.
+# DO NOT CHANGE BACK TO __execute
     def place_order(self, customer_id, pizzas, side_dishes):
-        self.__execute(
-            f"INSERT INTO order_info(customer) VALUES ({customer_id});")
-        self.__execute("SELECT last_insert_id();")
-        order_id = self.cursor.fetchone()[0]
+        try:
+            self.cursor.execute(f"INSERT INTO order_info(customer) VALUES ({customer_id});")
+            self.cursor.execute("SELECT last_insert_id();")
+            order_id = self.cursor.fetchone()[0]
 
-        for id in pizzas:
-            self.__execute(
-                f"INSERT INTO order_to_pizza(order_info, pizza) VALUES ({order_id}, {id});")
-            self.__execute(
-                f"UPDATE customer SET accumulation = accumulation + 1 WHERE id = {customer_id}")
-        for id in side_dishes:
-            self.__execute(
-                f"INSERT INTO order_to_side_dish(order_info, side_dish) VALUES ({order_id}, {id});")
-        self.__execute(
-            f"UPDATE order_info SET time = NOW() WHERE id = {order_id};")
+            for id in pizzas:
+                self.cursor.execute(f"INSERT INTO order_to_pizza(order_info, pizza) VALUES ({order_id}, {id});")
+                self.cursor.execute(f"UPDATE customer SET accumulation = accumulation + 1 WHERE id = {customer_id}")
+            for id in side_dishes:
+                self.cursor.execute(f"INSERT INTO order_to_side_dish(order_info, side_dish) VALUES ({order_id}, {id});")
+            self.cursor.execute(f"UPDATE order_info SET time = NOW() WHERE id = {order_id};")
+            self.db.commit()
+            return order_id
+        except sql.Error as error:
+            self.db.rollback()
+            print("ERROR in placing order: " + str(error))
 
-        self.db.commit()
-        return order_id
-
+# THEY SHOULD BE COMMITTED TOGETHER
+# If there's any error in any of these lines, none of them should be committed
+# DO NOT CHANGE BACK TO __execute
     def delete_order(self, order_id):
-        self.__execute(
-            f"DELETE FROM order_to_pizza WHERE order_info = {order_id};")
-        self.__execute(
-            f"DELETE FROM order_to_side_dish WHERE order_info = {order_id};")
-        self.__execute(f"DELETE FROM order_info WHERE id = {order_id};")
-        self.db.commit()
+        try:
+            self.cursor.execute(f"DELETE FROM order_to_pizza WHERE order_info = {order_id};")
+            self.cursor.execute(f"DELETE FROM order_to_side_dish WHERE order_info = {order_id};")
+            self.cursor.execute(f"DELETE FROM order_info WHERE id = {order_id};")
+            self.db.commit()
+        except sql.Error as error:
+            self.db.rollback()
+            print("ERROR in canceling order: " + str(error))
 
     def check_coupon(self, coupon_id):
         if (not self.exists('coupon', 'id', coupon_id)):
@@ -198,6 +194,26 @@ class PizzaDatabase:
         print("  - D" + str(side_dish_id) + ": " + side_dish["name"])
         print("    Price: €" + str("%.2f" %
               side_dish["price"]) + " (incl. 9% VAT)\n")
+
+# Since one of requirment is 'make sure that you show how you calculate the pizza prices', it's better to keep this.
+    def print_order(self, pizzas, side_dishes):
+        price = 0.
+        print("- Pizza:")
+        for pizza_id in pizzas:
+            pizza = self.get_pizza(pizza_id)
+            temp = price
+            for ingredient_name in pizza["ingredients"]:
+                ingredient = self.get_ingredient(ingredient_name)
+                price += ingredient["price"]*1.4*1.09
+            print(f"  - {pizza['name']}     €{'%.2f' % (price-temp)}")
+
+        if(side_dishes != []):
+            print("- Desert & Drink:")
+            for side_id in side_dishes:
+                side_dish = self.get_side_dish(side_id)
+                print(f"  - {side_dish['name']}     €{'%.2f' % side_dish['price']}")
+            price += self.get_side_dish(side_id)["price"]
+        return price
 
     # "private" function, executes sql command
     # replaces newlines and tabs with spaces
