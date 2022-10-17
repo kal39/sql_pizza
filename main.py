@@ -113,10 +113,10 @@ def setup_delivery(db, postcode, order_id):
             if deliveryman["time"] == None or deliveryman["time"] < datetime.datetime.now():  deliveryman["time"] = datetime.datetime.now()
 
             if fastest_delivery["time"] == None or deliveryman["time"] < fastest_delivery["time"]:
-                fastest_delivery["time"] = deliveryman["time"]
+                fastest_delivery["time"] = deliveryman["time"] + datetime.timedelta(minutes=30)
                 fastest_delivery["id"] = deliveryman_id
 
-    db.send_deliveryman(fastest_delivery["id"], fastest_delivery["time"] + datetime.timedelta(minutes=30), order_id)
+    db.send_deliveryman(fastest_delivery["id"],fastest_delivery["time"] , order_id)
     return fastest_delivery["time"].strftime('%Y-%m-%d %H:%M')
 
 # This thread will get orders from the terminal
@@ -155,7 +155,7 @@ if __name__ == "__main__":
                 if delivery_start_time == None:
                     print(f"cannot deliver to postal code {postcode}. Please try another address.")
                     db.delete_order(order_id)
-                else: print("- Your order will be out for delivery at", delivery_start_time)
+                else: print("- Your order will be delivered around", delivery_start_time)
             case "cancel":
                 for order in args: cancel_order(db, order)
             case "reset":
