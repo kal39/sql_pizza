@@ -1,7 +1,3 @@
-from operator import pos
-from threading import Thread
-from time import sleep
-
 import database
 import datetime
 

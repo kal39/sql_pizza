@@ -10,7 +10,6 @@ DESC table_name;
 Because I don't know why it cannot be shown in terminal if add this line in here :X
 '''
 
-from genericpath import exists
 import pymysql as sql
 import datetime
 
