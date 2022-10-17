@@ -10,19 +10,19 @@ DESC table_name;
 Because I don't know why it cannot be shown in terminal if add this line in here :X
 '''
 
+from genericpath import exists
 import pymysql as sql
 import datetime
 
 verbose = False  # if this is true PizzaDatabase will print out every sql command before executing it, useful for debugging
 
-
 class PizzaDatabase:
-    # constructor, connects to database "pizza" if it exists; if not it will create and initialise it
+    # constructor, connects to database "pizza" if it id_exists; if not it will create and initialise it
     def __init__(self):
         self.db = sql.connect(host="localhost", user="tom", password="1243")
         self.cursor = self.db.cursor()
 
-        if not self.__sql_database_exists():
+        if not self.__sql_database_id_exists():
             self.__create_sql_database()
             self.__populate_sql_database()
 
@@ -36,6 +36,11 @@ class PizzaDatabase:
         self.__destroy_sql_database()
         self.__create_sql_database()
         self.__populate_sql_database()
+    
+    # returns a list of all ids
+    def get_ids(self, table):
+        self.__execute(f"SELECT id FROM {table};")
+        return [i[0] for i in self.cursor.fetchall()]
 
     def get_pizza(self, id):
         self.__execute(f"SELECT pizza.name, ingredient.id FROM ingredient JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.id = '{id}';")
@@ -53,41 +58,23 @@ class PizzaDatabase:
         return {"name": side_dish[0], "price": side_dish[1]}
 
     def get_customer(self, id):
-        if (not self.exists(table='customer', col='id', str=id)):
-            return None
+        if (not self.id_exists('customer', id)): return None
         self.__execute(f"SELECT name, address, postcode, phone_number FROM customer WHERE id = '{id}';")
         customer = self.cursor.fetchone()
         return {"name": customer[0], "address": customer[1], "postcode": customer[2], "phone_number": customer[3]}
 
     def get_order(self, id):
-        if (not self.exists(table='order_info', col='id', str=id)):
-            return None
+        if (not self.id_exists('order_info', id)): return None
         self.__execute(f"SELECT customer, time FROM order_info WHERE id = '{id}';")
         order = self.cursor.fetchone()
         return {"customer": order[0], "time": order[1]}
 
     def get_deliveryman(self, id):
-        if (not self.exists(table='deliveryman', col='id', str=id)):
-            return None
+        if (not self.id_exists('deliveryman', id)): return None
         self.__execute(f"SELECT name, postcode, time FROM deliveryman WHERE id = '{id}';")
         deliveryman = self.cursor.fetchone()
         return {"name": deliveryman[0], "postcode": deliveryman[1], "time": deliveryman[2]}
-
-    # returns a list of all ids
-    def get_all_ids(self, table):
-        self.__execute(f"SELECT id FROM {table};")
-        return [i[0] for i in self.cursor.fetchall()]
-
-    def get_order_time(self, order_id):
-        if (not self.exists('order_info', 'id', order_id)):
-            print("Order does not exist.")
-            return
-        self.__execute(f"SELECT time FROM order_info WHERE id = {order_id};")
-        return self.cursor.fetchone()[0]
-
-# THEY SHOULD BE COMMITTED TOGETHER
-# If there's any error in any of these lines, none of them should be committed.
-# DO NOT CHANGE BACK TO __execute
+    
     def get_coupon(self, customer_id):
         self.__execute(f"SELECT accumulation FROM customer WHERE id = {customer_id};")
         pizza_number = self.cursor.fetchone()[0]
@@ -102,30 +89,33 @@ class PizzaDatabase:
                 self.db.rollback()
                 print("ERROR in getting coupon: " + str(error))
                 return -1
-        else:
-            return -1
+        else: return -1
 
-    def is_vegan(self, pizza_name):
+    def get_order_time(self, order_id):
+        if (not self.id_exists('order_info', order_id)):
+            print("Order does not exist.")
+            return
+        self.__execute(f"SELECT time FROM order_info WHERE id = {order_id};")
+        return self.cursor.fetchone()[0]
+
+    def is_pizza_vegan(self, pizza_name):
         self.__execute(f"SELECT ingredient.category FROM ingredient JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.name = '" + pizza_name + "';")
         category = [c[0] for c in self.cursor.fetchall()]
         for each in category:
-            if each != 'VEGETARIAN':
-                return ""
+            if each != 'VEGETARIAN': return ""
         return '(VEGETARIAN)'
 
     def exists(self, table, col, str):
         self.__execute(f"SELECT {col} FROM {table} WHERE {col} = '{str}' LIMIT 1;")
         return self.cursor.fetchone() != None
 
+    def id_exists(self, table, str): return self.exists(table, "id", str)
+
     def create_customer(self, customer_name, address, postcode, phoneNo):
-        self.__execute(
-            f"INSERT INTO customer(name, address, postcode, phone_number) values ('{customer_name}', '{address}', '{postcode}', '{phoneNo}');")
+        self.__execute(f"INSERT INTO customer(name, address, postcode, phone_number) values ('{customer_name}', '{address}', '{postcode}', '{phoneNo}');")
         self.__execute("SELECT last_insert_id();")
         return self.cursor.fetchone()[0]
 
-# THEY SHOULD BE COMMITTED TOGETHER
-# If there's any error in any of these lines, none of them should be committed.
-# DO NOT CHANGE BACK TO __execute
     def place_order(self, customer_id, pizzas, side_dishes):
         try:
             self.cursor.execute(f"INSERT INTO order_info(customer) VALUES ({customer_id});")
@@ -144,9 +134,6 @@ class PizzaDatabase:
             self.db.rollback()
             print("ERROR in placing order: " + str(error))
 
-# THEY SHOULD BE COMMITTED TOGETHER
-# If there's any error in any of these lines, none of them should be committed
-# DO NOT CHANGE BACK TO __execute
     def delete_order(self, order_id):
         try:
             self.cursor.execute(f"DELETE FROM order_to_pizza WHERE order_info = {order_id};")
@@ -158,44 +145,33 @@ class PizzaDatabase:
             print("ERROR in canceling order: " + str(error))
 
     def check_coupon(self, coupon_id):
-        if (not self.exists('coupon', 'id', coupon_id)):
-            return False
+        if (not self.id_exists('coupon', coupon_id)): return False
         self.__execute(f"SELECT status FROM coupon WHERE id = {coupon_id}")
         status = self.cursor.fetchone()[0]
-        if (status == 1):
-            return True
-        else:
-            return False
+        return status == 1
 
-    def set_deliveryman_time(self, id, time):
-        self.__execute(f"UPDATE deliveryman SET time = '{time.strftime('%Y-%m-%d %H:%M:%S')}' WHERE id = {id};")
+    def set_deliveryman_time(self, id, time): self.__execute(f"UPDATE deliveryman SET time = '{time.strftime('%Y-%m-%d %H:%M:%S')}' WHERE id = {id};")
 
-    def delete_coupon(self, coupon_id):
-        self.__execute(f"DELETE FROM coupon WHERE id = {coupon_id};")
+    def delete_coupon(self, coupon_id): self.__execute(f"DELETE FROM coupon WHERE id = {coupon_id};")
 
-    def send_coupon(self, coupon_id):
-        self.__execute(f"UPDATE coupon SET status = 1 WHERE id = {coupon_id};")
+    def send_coupon(self, coupon_id): self.__execute(f"UPDATE coupon SET status = 1 WHERE id = {coupon_id};")
 
     def print_pizza(self, pizza_id):
         pizza = self.get_pizza(pizza_id)
-        print("  - P" + str(pizza_id) + ": " +
-              pizza["name"].title() + " " + self.is_vegan(pizza["name"]))
+        print("  - P" + str(pizza_id) + ": " + pizza["name"].title() + " " + self.is_pizza_vegan(pizza["name"]))
         price = 0
         for ingredient_name in pizza["ingredients"]:
             ingredient = self.get_ingredient(ingredient_name)
             price += ingredient["price"]*1.4
-            print("    - " + ingredient["name"] + " : €" +
-                  str("%.2f" % (ingredient["price"]*1.4)))
-        print("    Price: €" + str("%.2f" %
-              (price*1.09)) + " (incl. 9% VAT)\n")
+            print("    - " + ingredient["name"] + " : €" + str("%.2f" % (ingredient["price"]*1.4)))
+        print("    Price: €" + str("%.2f" % (price*1.09)) + " (incl. 9% VAT)\n")
 
     def print_side_dish(self, side_dish_id):
         side_dish = self.get_side_dish(side_dish_id)
         print("  - D" + str(side_dish_id) + ": " + side_dish["name"])
-        print("    Price: €" + str("%.2f" %
-              side_dish["price"]) + " (incl. 9% VAT)\n")
+        print("    Price: €" + str("%.2f" % side_dish["price"]) + " (incl. 9% VAT)\n")
 
-# Since one of requirment is 'make sure that you show how you calculate the pizza prices', it's better to keep this.
+    # Since one of requirement is 'make sure that you show how you calculate the pizza prices', it's better to keep this.
     def print_order(self, pizzas, side_dishes):
         price = 0.
         print("- Pizza:")
@@ -216,13 +192,13 @@ class PizzaDatabase:
         return price
 
     def print_deliverymen(self):
-        ids = self.get_all_ids('deliveryman')
+        ids = self.get_ids('deliveryman')
         for id in ids:
             deliveryman = self.get_deliveryman(id)
-            if(deliveryman['time'] is None) or (datetime.datetime.now() > deliveryman['time']):
-                print(f"Deliveryman id: {id}, name: {deliveryman['name']}, area: {deliveryman['postcode']} is now available.")
-            else:
-                print(f"Deliveryman id: {id}, name: {deliveryman['name']}, area: {deliveryman['postcode']} is outside delivering. Will be avaliable at: {deliveryman['time']}")
+            print(f"{deliveryman['name']}:")
+            print(f"  area: {deliveryman['postcode']}")
+            if(deliveryman['time'] is None) or (datetime.datetime.now() > deliveryman['time']): print(f"  available: YES")
+            else: print(f"  available: NO (will be available at {deliveryman['time']})")
 
     # "private" function, executes sql command
     # replaces newlines and tabs with spaces
@@ -230,18 +206,16 @@ class PizzaDatabase:
     # if "verbose" is set to true it will print the command before running it, pretty useful for debugging
     def __execute(self, command):
         for line in command.replace("\n", " ").replace("\t", " ").split(";"):
-            if (len(line) == 0):
-                continue
+            if (len(line) == 0): continue
             try:
-                if verbose:
-                    print("RUNNING: " + line)
+                if verbose: print("RUNNING: " + line)
                 self.cursor.execute(line)
                 self.db.commit()
             except sql.Error as error:
                 print("ERROR: " + str(error))
 
-    # "private" function, check if the "pizza" database exists
-    def __sql_database_exists(self):
+    # "private" function, check if the "pizza" database id_exists
+    def __sql_database_id_exists(self):
         self.__execute("SHOW DATABASES LIKE 'pizza';")
         return self.cursor.fetchone() != None
 
@@ -255,8 +229,7 @@ class PizzaDatabase:
     def __destroy_sql_database(self): self.__execute("DROP DATABASE pizza;")
 
     # "private" function, inserts all the samples from "database_population_command.sql"
-    def __populate_sql_database(self): self.__execute(
-        open("database_population_command.sql", "r").read())
+    def __populate_sql_database(self): self.__execute(open("database_population_command.sql", "r").read())
 
 
 # for testing purposes (this will reset the database to the initial state)

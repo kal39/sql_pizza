@@ -30,9 +30,9 @@ def parse_order(db, ids):
     side_dishes = []
 
     for id in ids:
-        if id[0] == 'p' and db.exists('pizza', 'id', id[1:]):
+        if id[0] == 'p' and db.id_exists('pizza', id[1:]):
             pizzas.append(id[1:])
-        elif id[0] == 'd' and db.exists('side_dish', 'id', id[1:]):
+        elif id[0] == 'd' and db.id_exists('side_dish', id[1:]):
             side_dishes.append(id[1:])
         else:
             print(f"invalid id '{id}'")
@@ -44,10 +44,8 @@ def parse_order(db, ids):
 
     print("Ordering:")
 
-    for id in pizzas:
-        db.print_pizza(id)
-    for id in side_dishes:
-        db.print_side_dish(id)
+    for id in pizzas:  db.print_pizza(id)
+    for id in side_dishes: db.print_side_dish(id)
 
     return (pizzas, side_dishes)
 
@@ -57,8 +55,7 @@ def setup_customer(db):
             id = input("Your customer ID > ").strip()
             customer = db.get_customer(id)
             if customer != None:
-                print(
-                    f"- Your information: name: {customer['name']}, address: {customer['address']}, postcode: {customer['postcode']}, phone number: {customer['phone_number']}.")
+                print(f"- Your information: name: {customer['name']}, address: {customer['address']}, postcode: {customer['postcode']}, phone number: {customer['phone_number']}.")
                 return id
             else:
                 print("ID does not exist.")
@@ -68,18 +65,15 @@ def setup_customer(db):
             address = input("Address > ").strip()
             postcode = input("Postcode > ").strip()
             phone = input("Phone number > ").strip()
-            if(not postcode[:4].isdigit()):
-                print("Invalid postcode. Please write postcode like 1234XX.")
-            elif(not db.exists('deliveryman','postcode',postcode[:4])):
-                print(f"Cannot deliver to postal code {postcode}. Please try another address.")
-            else:
-                break
+            if(not postcode[:4].isdigit()): print("Invalid postcode. Please write postcode like 1234XX.")
+            elif(not db.exists('deliveryman', 'postcode', postcode[:4])): print(f"Cannot deliver to postal code {postcode}. Please try another address.")
+            else: break
         customer_id = db.create_customer(name, address, postcode, phone)
         print("- Registered successfully! Your customer id is", customer_id)
         return customer_id
 
 def cancel_order(db, id):
-    if db.exists("order_info", "id", id):
+    if db.id_exists("order_info", id):
         if datetime.datetime.now() + datetime.timedelta(minutes=-5) > db.get_order_time(id):
             print(f"Cannot cancel order {id} because for more than 5 minutes have passed.")
         else:
@@ -87,15 +81,6 @@ def cancel_order(db, id):
             print(f"Cancelled order {id}")
     else:
         print("Order doesn't exist. Please try again.")
-
-def deliver_order(db, id):
-    for deliveryman_id in db.get_all_ids('deliveryman'):
-        deliveryman = db.get_deliveryman(deliveryman_id)
-        if deliveryman["time"] == None or datetime.datetime.now() + datetime.timedelta(minutes=-20) > deliveryman["time"]:
-            print(f"{deliveryman['name']} is now delivering order {id}, it will arrive in 20 minutes")
-            db.delete_order(id)
-            db.set_deliveryman_time(id)
-            return
 
 def check_coupon(db):
     while (True):
@@ -115,7 +100,7 @@ def coupon(db, customer_id):
         print("- You can use it for 10% discount next time.")
         db.send_coupon(coupon_id)
 
-# Since one of requirment is 'make sure that you show how you calculate the pizza prices', it's better to keep this.
+# Since one of requirement is 'make sure that you show how you calculate the pizza prices', it's better to keep this.
 def show_order(db, pizzas, side_dishes, discount):
     print("Your order detail: ")
     original = db.print_order(pizzas, side_dishes)
@@ -126,11 +111,10 @@ def setup_delivery(db, postcode):
     cooking_time = datetime.datetime.now() + datetime.timedelta(minutes=10)
 
     # find the deliveryman available the earliest
-    for deliveryman_id in db.get_all_ids('deliveryman'):
+    for deliveryman_id in db.get_ids('deliveryman'):
         deliveryman = db.get_deliveryman(deliveryman_id)
         if deliveryman["postcode"] == postcode:
-            if deliveryman["time"] == None or deliveryman["time"] < cooking_time:
-                deliveryman["time"] = cooking_time
+            if deliveryman["time"] == None or deliveryman["time"] < cooking_time:  deliveryman["time"] = cooking_time
 
             if fastest_delivery["time"] == None or deliveryman["time"] < fastest_delivery["time"]:
                 fastest_delivery["time"] = deliveryman["time"]
@@ -144,26 +128,21 @@ if __name__ == "__main__":
     db = database.PizzaDatabase()
 
     while True:
-        input_str = input(
-            "Enter command (\"help\" for available commands)\n > ").strip().lower()
+        input_str = input("Enter command (\"help\" for available commands)\n > ").strip().lower()
 
         command = input_str.split(" ", 1)[0]
-        args = input_str.split(" ")[1:] if len(
-            input_str.split(" ", 1)) > 1 else []
+        args = input_str.split(" ")[1:] if len(input_str.split(" ", 1)) > 1 else []
 
         match command:
             case "menu":
                 print("- Pizzas:")
-                for pizza_id in db.get_all_ids('pizza'):
-                    db.print_pizza(pizza_id)
+                for pizza_id in db.get_ids('pizza'): db.print_pizza(pizza_id)
                 print("- Drinks & Deserts:")
-                for side_dish_id in db.get_all_ids('side_dish'):
-                    db.print_side_dish(side_dish_id)
+                for side_dish_id in db.get_ids('side_dish'): db.print_side_dish(side_dish_id)
 
             case "order":
                 (pizzas, side_dishes) = parse_order(db, args)
-                if pizzas == []:
-                    continue
+                if pizzas == []:  continue
                 customer_id = setup_customer(db)
                 order_id = db.place_order(customer_id, pizzas, side_dishes)
                 discount = check_coupon(db)
@@ -181,14 +160,12 @@ if __name__ == "__main__":
                     db.delete_order(order_id)
                 else: print("- Your order will be out for delivery at", delivery_start_time)
             case "cancel":
-                for order in args:
-                    cancel_order(db, order)
+                for order in args: cancel_order(db, order)
             case "reset":
                 print("Resting database...")
                 db.reset()
                 print("done")
-            case "delivery":
-                db.print_deliverymen()
+            case "delivery":  db.print_deliverymen()
             case "help": print(doc)
             case "quit": exit(0)
             case _: print("Unknown command \"" + command + "\"")
