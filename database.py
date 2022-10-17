@@ -143,11 +143,8 @@ class PizzaDatabase:
             delivery_time = self.cursor.fetchone()[0] + datetime.timedelta(minutes=30)
             self.cursor.execute(f"SELECT id, time FROM deliveryman WHERE postcode = '{postcode}' and time >= '{delivery_time.strftime('%Y-%m-%d %H:%M:%S')}' LIMIT 1;")
             deliveryman = self.cursor.fetchone()
-            print(deliveryman)
-            if(deliveryman[1] == delivery_time.strftime('%Y-%m-%d %H:%M:%S')):
-                self.cursor.execute(f"UPDATE deliveryman SET time = NOW() WHERE id = {deliveryman};")
-            else:
-                self.cursor.execute(f"UPDATE deliveryman SET time = time - 1800 WHERE id = {deliveryman};")
+            time = deliveryman[1] + datetime.timedelta(minutes=-30)
+            self.cursor.execute(f"UPDATE deliveryman SET time='{time.strftime('%Y-%m-%d %H:%M:%S')}' WHERE id = '{deliveryman[0]}';")
             
             self.cursor.execute(f"DELETE FROM order_to_pizza WHERE order_info = {order_id};")
             self.cursor.execute(f"DELETE FROM order_to_side_dish WHERE order_info = {order_id};")
@@ -249,6 +246,5 @@ class PizzaDatabase:
 # for testing purposes (this will reset the database to the initial state)
 if __name__ == "__main__":
     db = PizzaDatabase()
-    #db.reset()
-    #db.delete_order(1)
+    db.reset()
     #db.place_order(1,[1,2,3],[2]) # For presentation
