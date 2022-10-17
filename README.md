@@ -14,7 +14,7 @@ Available commands:
   Place a new order. Add items splitted by a single space.  
   Example: `order p1 p2 p3 d2`  
 - `cancel order_id1 order_id2 ...`  
-  Cancel an existing order.  
+  Cancel existing orders.  
   Example: `cancel 1 2`  
 - `delivery`  
   Check all deliverymen's status.  

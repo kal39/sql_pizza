@@ -97,7 +97,6 @@ def coupon(db, customer_id):
     if coupon_id != -1:
         print("- You've ordered more than 10 pizzas. Here's a coupon id:", coupon_id)
         print("- You can use it for 10% discount next time.")
-        db.send_coupon(coupon_id)
 
 # Since one of requirement is 'make sure that you show how you calculate the pizza prices', it's better to keep this.
 def show_order(db, pizzas, side_dishes, discount):
@@ -119,7 +118,7 @@ def setup_delivery(db, postcode):
                 fastest_delivery["time"] = deliveryman["time"]
                 fastest_delivery["id"] = deliveryman_id
 
-    db.set_deliveryman_time(fastest_delivery["id"], fastest_delivery["time"] + datetime.timedelta(minutes=30))
+    db.set_deliveryman_time(fastest_delivery["id"], fastest_delivery["time"] + datetime.timedelta(minutes=20))
     return fastest_delivery["time"]
 
 # This thread will get orders from the terminal

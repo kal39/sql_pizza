@@ -59,4 +59,4 @@ INSERT INTO customer(name, address, postcode, phone_number) values ('Jerry', 'PH
 
 INSERT INTO deliveryman(name, postcode) values ('Tom', '6229');
 INSERT INTO deliveryman(name, postcode) values ('Kurt', '6228');
-INSERT INTO deliveryman(name, postcode) values ('Albert', '6211');
+INSERT INTO deliveryman(name, postcode) values ('Albert', '6229');
