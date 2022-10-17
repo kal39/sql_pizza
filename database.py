@@ -137,9 +137,22 @@ class PizzaDatabase:
 
     def delete_order(self, order_id):
         try:
+            self.cursor.execute(f"SELECT c.postcode FROM customer c JOIN order_info o ON c.id = o.customer WHERE o.id = {order_id};")
+            postcode = self.cursor.fetchone()[0][:4]
+            self.cursor.execute(f"SELECT time FROM order_info WHERE id = {order_id};")
+            delivery_time = self.cursor.fetchone()[0] + datetime.timedelta(minutes=30)
+            self.cursor.execute(f"SELECT id, time FROM deliveryman WHERE postcode = '{postcode}' and time >= '{delivery_time.strftime('%Y-%m-%d %H:%M:%S')}' LIMIT 1;")
+            deliveryman = self.cursor.fetchone()
+            print(deliveryman)
+            if(deliveryman[1] == delivery_time.strftime('%Y-%m-%d %H:%M:%S')):
+                self.cursor.execute(f"UPDATE deliveryman SET time = NOW() WHERE id = {deliveryman};")
+            else:
+                self.cursor.execute(f"UPDATE deliveryman SET time = time - 1800 WHERE id = {deliveryman};")
+            
             self.cursor.execute(f"DELETE FROM order_to_pizza WHERE order_info = {order_id};")
             self.cursor.execute(f"DELETE FROM order_to_side_dish WHERE order_info = {order_id};")
             self.cursor.execute(f"DELETE FROM order_info WHERE id = {order_id};")
+
             self.db.commit()
         except sql.Error as error:
             self.db.rollback()
@@ -149,7 +162,12 @@ class PizzaDatabase:
         if (not self.id_exists('coupon', coupon_id)): return False
         else: return True
 
-    def set_deliveryman_time(self, id, time): self.__execute(f"UPDATE deliveryman SET time = '{time.strftime('%Y-%m-%d %H:%M:%S')}' WHERE id = {id};")
+    def send_deliveryman(self, id, time, order_id): 
+        try:
+            self.cursor.execute(f"UPDATE deliveryman SET time = '{time.strftime('%Y-%m-%d %H:%M:%S')}' WHERE id = {id};")
+        except sql.Error as error:
+            self.db.rollback()
+            print("ERROR in sennding deliveryman: " + str(error))
 
     def delete_coupon(self, coupon_id): self.__execute(f"DELETE FROM coupon WHERE id = {coupon_id};")
 
@@ -231,5 +249,6 @@ class PizzaDatabase:
 # for testing purposes (this will reset the database to the initial state)
 if __name__ == "__main__":
     db = PizzaDatabase()
-    db.reset()
+    #db.reset()
+    #db.delete_order(1)
     #db.place_order(1,[1,2,3],[2]) # For presentation
