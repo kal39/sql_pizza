@@ -118,7 +118,7 @@ def setup_delivery(db, postcode):
                 fastest_delivery["time"] = deliveryman["time"]
                 fastest_delivery["id"] = deliveryman_id
 
-    db.set_deliveryman_time(fastest_delivery["id"], fastest_delivery["time"] + datetime.timedelta(minutes=30))
+    db.set_deliveryman_time(fastest_delivery["id"], fastest_delivery["time"] + datetime.timedelta(minutes=20))
     return fastest_delivery["time"].strftime('%Y-%m-%d %H:%M')
 
 # This thread will get orders from the terminal

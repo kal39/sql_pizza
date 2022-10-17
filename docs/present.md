@@ -38,7 +38,7 @@ Run in MySQL:
 + Show in MySQL: `SELECT * FROM deliveryman;`
 + Postcode: match the fist 4 digit with customer's postcode
 + Run command `delivery`. 
-  + (will be available at xxx): When a pizza is ordered, pizza will be cooked for 10 mins. If a delivery employee is available/will be available in this 10 mins, his time will be blocked after 20 mins after cooking time. Which is 30 mins after order is placed in total.
+  + (will be available at xxx): When a pizza is ordered, pizza will be cooked for 10 mins. If a delivery employee is available/will be available in this 10 mins, his time will be blocked from now until 20 mins after cooking time. Which is 30 mins after order is placed in total.
   + If there's no available delivery man for now, we will find the fastest one and block his time. The waiting time is added in **estimated delivery time** of the order.
 + Place an order out of available area: A delivery person cannot deliver outside the area which is not assigned to them
 + `setup_delivery()` in `main.py`
