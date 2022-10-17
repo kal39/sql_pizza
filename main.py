@@ -1,14 +1,17 @@
 import database
 import datetime
+from sys import platform
+
+if platform == "linux": import readline
 
 doc = """
 available commands:
 - menu
   Prints available pizzas, drinks and desserts
-- order item1, item2, ...
+- order item1 item2 ...
   Place a new order. Add items splitted by a single space.
-- cancel customer_id
-  Cancel an existing order by customer id.
+- cancel order_id1 order_id2 ...
+  Cancel an existing order.
 - delivery
   Check all deliverymen's status.
 - reset
@@ -16,7 +19,7 @@ available commands:
 - help
   Show this message.
 - quit
-  Quite the app.
+  Quit the app.
 """
 
 # takes in a list of ids and checks if they are all valid
