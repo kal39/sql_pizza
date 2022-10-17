@@ -40,7 +40,7 @@ Available commands:
 ### [schema/table structure](docs/schema.pdf)  
 ### [presentation video](docs/video_present.mp4)
 **This video only shows the core part of our project. For more detail please take a look of:**
-### [detailed presentation in text](docs/present.md)  
+### [detailed presentation in text](docs/text_present.md)  
 If you don't know how to read .md file:  
 Visit to our GitHub repository: https://github.com/kal39/sql_pizza
 
