@@ -38,7 +38,7 @@ class PizzaDatabase:
     
     # returns a list of all ids
     def get_ids(self, table):
-        self.__execute(f"SELECT id FROM {table};")
+        self.__execute(f"SELECT id FROM {table} ORDER BY id;")
         return [i[0] for i in self.cursor.fetchall()]
 
     def get_pizza(self, id):
@@ -167,7 +167,7 @@ class PizzaDatabase:
 
     def print_side_dish(self, side_dish_id):
         side_dish = self.get_side_dish(side_dish_id)
-        print("  - D" + str(side_dish_id) + ": " + side_dish["name"])
+        print("  - D" + str(side_dish_id) + ": " + side_dish["name"].title())
         print("    Price: €" + str("%.2f" % side_dish["price"]) + " (incl. 9% VAT)\n")
 
     # Since one of requirement is 'make sure that you show how you calculate the pizza prices', it's better to keep this.
