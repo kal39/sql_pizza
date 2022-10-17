@@ -155,7 +155,7 @@ if __name__ == "__main__":
                 if delivery_start_time == None:
                     print(f"cannot deliver to postal code {postcode}. Please try another address.")
                     db.delete_order(order_id)
-                else: print("- Your order will be delivered around", delivery_start_time)
+                else: print("- Your order will arrive around", delivery_start_time)
             case "cancel":
                 for order in args: cancel_order(db, order)
             case "reset":
