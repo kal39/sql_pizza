@@ -232,3 +232,4 @@ class PizzaDatabase:
 if __name__ == "__main__":
     db = PizzaDatabase()
     db.reset()
+    #db.place_order(1,[1,2,3],[2]) # For presentation
