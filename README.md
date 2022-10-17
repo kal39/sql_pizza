@@ -5,9 +5,9 @@ Step 1: go to `database.py`, find the first line of `__init__` function, and rep
 Step 2: run `database.py`. If you run it in terminal, you can use `python database.py`.  
 ***Warning: if you have a database called 'pizza', running this will cover your 'pizza' database.***  
 
-## Use the program
+## To use the program
 Run `python main.py` in terminal.  
-Available commands:  
+Available commands:
 - `menu`  
   Prints available pizzas, drinks and desserts  
 - `order item1 item2 ...`  
