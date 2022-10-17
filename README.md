@@ -26,6 +26,6 @@ Available commands:
   Quit the app.  
 
 ## Diagrams and other documents:
-[ER diagram](docs/ERdiagram.pdf)
-[schema/table structure](docs/schema.pdf)
-[presentation content](docs/present.md)
+[ER diagram](docs/ERdiagram.pdf)  
+[schema/table structure](docs/schema.pdf)  
+[presentation content](docs/present.md)  
