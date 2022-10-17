@@ -56,7 +56,7 @@ INSERT INTO side_dish(name, price) values ('thick shake triple chocolate', 4.75)
 INSERT INTO side_dish(name, price) values ('chocolate lavacake',       3.95);
 INSERT INTO side_dish(name, price) values ('dutch pancake',      2.99);
 
-INSERT INTO customer(name, address, postcode, phone_number) values ('Jerry', 'PHS1', '6229EN', '123456789');
+INSERT INTO customer(name, address, postcode, phone_number) values ('Jerry', 'PHS1', '6228EN', '123456789');
 
 INSERT INTO deliveryman(name, postcode) values ('Tom', '6229');
 INSERT INTO deliveryman(name, postcode) values ('Kurt', '6228');

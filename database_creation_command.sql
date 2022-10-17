@@ -32,18 +32,18 @@ CREATE TABLE customer(
 	accumulation INT DEFAULT 0
 );
 
-CREATE TABLE deliveryman(
-	id INT PRIMARY KEY AUTO_INCREMENT,
-	name VARCHAR(50),
-	postcode VARCHAR(4) NOT NULL,
-	time DATETIME
-);
-
 CREATE TABLE order_info(
 	id INT PRIMARY KEY AUTO_INCREMENT,
 	customer INT NOT NULL,
 	time DATETIME,
 	FOREIGN KEY (customer) REFERENCES customer(id)
+);
+
+CREATE TABLE deliveryman(
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	name VARCHAR(50),
+	postcode VARCHAR(4) NOT NULL,
+	time DATETIME
 );
 
 CREATE TABLE order_to_pizza(

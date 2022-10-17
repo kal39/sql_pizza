@@ -104,21 +104,19 @@ def show_order(db, pizzas, side_dishes, discount):
     original = db.print_order(pizzas, side_dishes)
     print(f'- Total price: € {("%.2f" % (original * discount))} (original price: € {("%.2f" % original)})')
 
-def setup_delivery(db, postcode):
+def setup_delivery(db, postcode, order_id):
     fastest_delivery = {"time": None, "id": None}
-    cooking_time = datetime.datetime.now() + datetime.timedelta(minutes=10)
-
     # find the deliveryman available the earliest
     for deliveryman_id in db.get_ids('deliveryman'):
         deliveryman = db.get_deliveryman(deliveryman_id)
         if deliveryman["postcode"] == postcode:
-            if deliveryman["time"] == None or deliveryman["time"] < cooking_time:  deliveryman["time"] = cooking_time
+            if deliveryman["time"] == None or deliveryman["time"] < datetime.datetime.now():  deliveryman["time"] = datetime.datetime.now()
 
             if fastest_delivery["time"] == None or deliveryman["time"] < fastest_delivery["time"]:
                 fastest_delivery["time"] = deliveryman["time"]
                 fastest_delivery["id"] = deliveryman_id
 
-    db.set_deliveryman_time(fastest_delivery["id"], fastest_delivery["time"] + datetime.timedelta(minutes=20))
+    db.send_deliveryman(fastest_delivery["id"], fastest_delivery["time"] + datetime.timedelta(minutes=30), order_id)
     return fastest_delivery["time"].strftime('%Y-%m-%d %H:%M')
 
 # This thread will get orders from the terminal
@@ -152,7 +150,7 @@ if __name__ == "__main__":
                 coupon(db, customer_id)
 
                 postcode = db.get_customer(customer_id)["postcode"][:4]
-                delivery_start_time = setup_delivery(db, postcode)
+                delivery_start_time = setup_delivery(db, postcode, order_id)
 
                 if delivery_start_time == None:
                     print(f"cannot deliver to postal code {postcode}. Please try another address.")

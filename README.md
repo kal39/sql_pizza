@@ -28,4 +28,4 @@ Available commands:
 ## Diagrams and other documents:
 [ER diagram](docs/ERdiagram.pdf)  
 [schema/table structure](docs/schema.pdf)  
-[presentation content](docs/present.md)  
+[detailed presentation](docs/present.md)  
