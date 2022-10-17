@@ -12,6 +12,8 @@ available commands:
   Place a new order. Add items splitted by a single space.
 - cancel order_id1 order_id2 ...
   Cancel an existing order.
+- status order_id1 order_id2 ...
+  Check the status of orders.
 - delivery
   Check all deliverymen's status.
 - reset
@@ -163,6 +165,7 @@ if __name__ == "__main__":
                 db.reset()
                 print("done")
             case "delivery":  db.print_deliverymen()
+            case "status": db.get_order_status(args)
             case "help": print(doc)
             case "quit": exit(0)
             case _: print("Unknown command \"" + command + "\"")

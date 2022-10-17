@@ -3,6 +3,7 @@ Group 7:
 Ankie - i6272224
 Kai - i6275822
 
+
 ## If this is the first you run this program:
 Step 1: go to `database.py`, find the first line of `__init__` function, and replace `user` and `password` with your own user and password of your local 'mysql'.  
 Step 2: run `database.py`. If you run it in terminal, you can use `python database.py`.  
@@ -21,6 +22,9 @@ Available commands:
 - `cancel order_id1 order_id2 ...`  
   Cancel existing orders.  
   Example: `cancel 1 2`  
+- `status order_id1 order_id2 ...`
+  Check the status of orders;
+  Example: `status 1 3`
 - `delivery`  
   Check all deliverymen's status.  
 - `reset`  
@@ -34,5 +38,10 @@ Available commands:
 ### [ER schema](docs/ERschema.pdf)
 ### [ER diagram](docs/ERdiagram.pdf) 
 ### [schema/table structure](docs/schema.pdf)  
-### [detailed presentation in text](docs/present.md)  
 ### [presentation video](docs/video_present.mp4)
+**This video only shows the core part of our project. For more detail please take a look of:**
+### [detailed presentation in text](docs/present.md)  
+If you don't know how to read .md file:  
+Visit to our GitHub repository: https://github.com/kal39/sql_pizza
+
+

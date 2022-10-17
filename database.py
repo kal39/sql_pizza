@@ -89,6 +89,22 @@ class PizzaDatabase:
         self.__execute(f"SELECT time FROM order_info WHERE id = {order_id};")
         return self.cursor.fetchone()[0]
 
+    def get_order_status(self, order_ids):
+        for order_id in order_ids:
+            if (not self.id_exists('order_info', order_id)):
+              print("Order does not exist or is cancelled.")
+              return
+            self.__execute(f"SELECT time FROM order_info WHERE id = {order_id}")
+            time = self.cursor.fetchone()[0]
+            if((datetime.datetime.now() - time).seconds <600):
+               print(f"Your order {order_id} is being cooked.")
+               print("It will be delivered around", (time + datetime.timedelta(minutes=10)).strftime('%Y-%m-%d %H:%M'))
+            elif((datetime.datetime.now() - time).seconds < 1800):
+                print(f"Your order {order_id} is being delivered.")
+                print("It will arrive around", (time + datetime.timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M'))
+            else:
+                print(f"Your order {order_id} is delivered.")
+
     def is_pizza_vegan(self, pizza_name):
         '''
         This function shows how we tag if a pizza is vegetarian or not.
@@ -246,5 +262,6 @@ class PizzaDatabase:
 # for testing purposes (this will reset the database to the initial state)
 if __name__ == "__main__":
     db = PizzaDatabase()
-    db.reset()
+    #db.reset()
+    db.get_order_status(6)
     #db.place_order(1,[1,2,3],[2]) # For presentation
