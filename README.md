@@ -1,4 +1,7 @@
 # Databases - Course Project
+Group 7:
+Ankie - i6272224
+Kai - i6275822
 
 ## If this is the first you run this program:
 Step 1: go to `database.py`, find the first line of `__init__` function, and replace `user` and `password` with your own user and password of your local 'mysql'.  
@@ -10,8 +13,10 @@ Run `python main.py` in terminal.
 Available commands:
 - `menu`  
   Prints available pizzas, drinks and desserts  
+  Example: `- P1: Perfect Pepperoni`
+  `P1` is id that you use to order.
 - `order item1 item2 ...`  
-  Place a new order. Add items splitted by a single space.  
+  Place a new order. Add items by their id, and splitting the, by a single space.  
   Example: `order p1 p2 p3 d2`  
 - `cancel order_id1 order_id2 ...`  
   Cancel existing orders.  
@@ -26,6 +31,8 @@ Available commands:
   Quit the app.  
 
 ## Diagrams and other documents:
-[ER diagram](docs/ERdiagram.pdf)  
-[schema/table structure](docs/schema.pdf)  
-[detailed presentation](docs/present.md)  
+### [ER schema](docs/ERschema.pdf)
+### [ER diagram](docs/ERdiagram.pdf) 
+### [schema/table structure](docs/schema.pdf)  
+### [detailed presentation in text](docs/present.md)  
+### [presentation video](docs/video_present.mp4)
