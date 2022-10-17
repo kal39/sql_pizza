@@ -79,6 +79,17 @@ Order more pizzas:
   ![](imgs/cancel5.png)
   + *available time of Kurt reduced 30 mins. He is not available because he is delivering order 1.*
 
+### `Staus`: Check the status of orders.
+Current time: 2022-10-17 23:49
+All orders:
+![](imgs/status1.png)
++ The status of an order placed within 10 mins:
+  ![](imgs/status2.png)
++ The status of an order placed more than 10 mins but within 30 mins:
+  ![](imgs/status3.png)
++ The status of an order placed 30 mins before:
+  ![](imgs/status4.png)
+
 ### `delivery`: Check all deliverymen's status.
 + Several deliverymen: `SELECT * FROM deliveryman;`
   ![](imgs/delivery1.png)
