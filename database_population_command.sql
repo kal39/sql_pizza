@@ -51,6 +51,7 @@ INSERT INTO pizza_to_ingredient(pizza, ingredient) values(10, 11);
 INSERT INTO side_dish(name, price) values ('thick shake cherry', 4.75);
 INSERT INTO side_dish(name, price) values ('thick shake banana', 4.75);
 INSERT INTO side_dish(name, price) values ('thick shake iced coffee', 4.75);
+INSERT INTO side_dish(name, price) values ('thick shake triple chocolate', 4.75);
 
 INSERT INTO side_dish(name, price) values ('chocolate lavacake',       3.95);
 INSERT INTO side_dish(name, price) values ('dutch pancake',      2.99);
