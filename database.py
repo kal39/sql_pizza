@@ -74,8 +74,8 @@ class PizzaDatabase:
                 self.cursor.execute(f"UPDATE customer SET accumulation = accumulation - 10 WHERE id = {customer_id}")
                 self.cursor.execute("INSERT INTO coupon() VALUES();")
                 self.db.commit()
-                self.cursor.execute("SELECT id FROM coupon WHERE status = 0 LIMIT 1;")
-                return self.cursor.fetchone()[0]   
+                self.__execute("SELECT last_insert_id();")
+                return self.cursor.fetchone()[0]
             except sql.Error as error:
                 self.db.rollback()
                 print("ERROR in getting coupon: " + str(error))
@@ -90,6 +90,16 @@ class PizzaDatabase:
         return self.cursor.fetchone()[0]
 
     def is_pizza_vegan(self, pizza_name):
+        '''
+        This function shows how we tag if a pizza is vegetarian or not.
+
+        Args:
+            pizza_name: The name of pizza we want to tag.
+        
+        Returns:
+            If it is vagetarian, it will return a tag to add after the pizza's name in menu.
+        '''
+
         self.__execute(f"SELECT ingredient.category FROM ingredient JOIN pizza_to_ingredient ON ingredient.id = pizza_to_ingredient.ingredient JOIN pizza ON pizza.id = pizza_to_ingredient.pizza WHERE pizza.name = '" + pizza_name + "';")
         category = [c[0] for c in self.cursor.fetchall()]
         for each in category:
@@ -137,15 +147,11 @@ class PizzaDatabase:
 
     def check_coupon(self, coupon_id):
         if (not self.id_exists('coupon', coupon_id)): return False
-        self.__execute(f"SELECT status FROM coupon WHERE id = {coupon_id}")
-        status = self.cursor.fetchone()[0]
-        return status == 1
+        else: return True
 
     def set_deliveryman_time(self, id, time): self.__execute(f"UPDATE deliveryman SET time = '{time.strftime('%Y-%m-%d %H:%M:%S')}' WHERE id = {id};")
 
     def delete_coupon(self, coupon_id): self.__execute(f"DELETE FROM coupon WHERE id = {coupon_id};")
-
-    def send_coupon(self, coupon_id): self.__execute(f"UPDATE coupon SET status = 1 WHERE id = {coupon_id};")
 
     def print_pizza(self, pizza_id):
         pizza = self.get_pizza(pizza_id)
@@ -162,7 +168,6 @@ class PizzaDatabase:
         print("  - D" + str(side_dish_id) + ": " + side_dish["name"].title())
         print("    Price: €" + str("%.2f" % side_dish["price"]) + " (incl. 9% VAT)\n")
 
-    # Since one of requirement is 'make sure that you show how you calculate the pizza prices', it's better to keep this.
     def print_order(self, pizzas, side_dishes):
         price = 0.
         print("- Pizza:")
