@@ -147,6 +147,7 @@ if __name__ == "__main__":
                 discount = check_coupon(db)
                 print("+-----------------------------------------------------------+")
                 print("- Your order id is:", order_id)
+                print("- You can cancel your order in 5 minutes with your order id.\n")
                 show_order(db, pizzas, side_dishes, discount)
                 print("+-----------------------------------------------------------+")
                 coupon(db, customer_id)

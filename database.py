@@ -1,13 +1,5 @@
 '''
-Before the first time you run this, run these in mysql:
-
-CREATE USER tom IDENTIFIED BY '1243';
-GRANT ALL PRIVILEGES ON pizza.* to 'tom'@'%';
-FLUSH PRIVILEGES;
-
-You can check the structure of any tables by using this in mysql:
-DESC table_name;
-Because I don't know why it cannot be shown in terminal if add this line in here :X
+Before the first time you run this, please replace user and password with your own database's user and password, and run this file.
 '''
 
 import pymysql as sql
