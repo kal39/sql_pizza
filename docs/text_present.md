@@ -8,24 +8,24 @@
 ## The database we created:
 Run in MySQL:
 + `use pizza;`
-+ `show tables;`
++ `show tables;`   
 ![](imgs/dbms1.png)
 ### Tables sturcture:
-+ `DESC pizza; DESC ingredient; DESC pizza_to_ingredient; DESC side_dish; DESC customer; DESC deliveryman; DESC order_info; DESC order_to_pizza; DESC order_to_side_dish; DESC coupon;`
-![](imgs/dbms2.png)
++ `DESC pizza; DESC ingredient; DESC pizza_to_ingredient; DESC side_dish; DESC customer; DESC deliveryman; DESC order_info; DESC order_to_pizza; DESC order_to_side_dish; DESC coupon;`   
+![](imgs/dbms2.png)   
 ![](imgs/dbms3.png)
 ### Sample data:
 + `SELECT * FROM pizza;`
 + Pizzas information: `SELECT * FROM pizza JOIN pizza_to_ingredient ON pizza.id = pizza_to_ingredient.pizza JOIN ingredient ON ingredient.id = pizza_to_ingredient.ingredient;`
-+ `SELECT * FROM side_dish;`
++ `SELECT * FROM side_dish;`   
 ![](imgs/dbms4.png)
 
 
 ## Our program's functionality:
-### `help`: Shows all available commands
+### `help`: Shows all available commands   
 ![](imgs/help.png)
 
-### `menu`: Prints available pizzas, drinks and desserts
+### `menu`: Prints available pizzas, drinks and desserts   
 ![](imgs/menu.png)
 + There are 10 pizzas with 10 different ingredients, 4 drinks and 2 deserts as sample data.
 + It shows pizzas with their ingredients, and if it is **vegetarian**
@@ -37,19 +37,19 @@ Run in MySQL:
 
 ### `order [items]`: Place a new order. Add items splitted by a single space.
 #### Process:
-1. Order pizza, drink and desert
+1. Order pizza, drink and desert   
   ![](imgs/order1.png)
-2. Store customer's information
+2. Store customer's information  
   ![](imgs/order2.png)
-3. Use coupon and finish ordering
+3. Use coupon and finish ordering   
   ![](imgs/order3.png)
 + It shows comfirmation with the **products** ordered and the **estimated delivery time**
 + Coupon is used to have 10% discount
 
 #### Send coupon:
-Run in MySQL: `SELECT * FROM customer WHERE id = 2;`
+Run in MySQL: `SELECT * FROM customer WHERE id = 2;`   
 ![](imgs/coupon1.png)
-Order more pizzas:
+Order more pizzas:   
 ![](imgs/coupon2.png)
 
 #### Addition:
